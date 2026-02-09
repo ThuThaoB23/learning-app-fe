@@ -3,18 +3,14 @@ import { cookies } from "next/headers";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
-export type AdminUser = {
+export type TopicResponse = {
   id: string;
-  email: string;
-  displayName?: string | null;
-  username?: string | null;
-  avatarUrl?: string | null;
-  role: "USER" | "ADMIN" | string;
+  name?: string | null;
+  title?: string | null;
+  description?: string | null;
+  language?: string | null;
   status?: string | null;
-  locale?: string | null;
-  timeZone?: string | null;
-  dailyGoal?: number | null;
-  lastLoginAt?: string | null;
+  createdAt?: string | null;
 };
 
 export type PageResponse<T> = {
@@ -25,18 +21,16 @@ export type PageResponse<T> = {
   size: number;
 };
 
-export async function fetchAdminUsers(
+export async function fetchTopics(
   page = 0,
   size = 20,
   sort?: string,
   filters?: {
-    email?: string;
-    username?: string;
-    displayName?: string;
-    role?: string;
+    name?: string;
+    slug?: string;
     status?: string;
   },
-): Promise<PageResponse<AdminUser> | null> {
+): Promise<PageResponse<TopicResponse> | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
   const tokenType = cookieStore.get("tokenType")?.value ?? "Bearer";
@@ -45,23 +39,17 @@ export async function fetchAdminUsers(
     return null;
   }
 
-  const url = new URL(`${API_BASE_URL}/admin/users`);
+  const url = new URL(`${API_BASE_URL}/admin/topics`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("size", String(size));
   if (sort) {
     url.searchParams.set("sort", sort);
   }
-  if (filters?.email) {
-    url.searchParams.set("email", filters.email);
+  if (filters?.name) {
+    url.searchParams.set("name", filters.name);
   }
-  if (filters?.username) {
-    url.searchParams.set("username", filters.username);
-  }
-  if (filters?.displayName) {
-    url.searchParams.set("displayName", filters.displayName);
-  }
-  if (filters?.role) {
-    url.searchParams.set("role", filters.role);
+  if (filters?.slug) {
+    url.searchParams.set("slug", filters.slug);
   }
   if (filters?.status) {
     url.searchParams.set("status", filters.status);
@@ -79,7 +67,7 @@ export async function fetchAdminUsers(
       return null;
     }
 
-    return (await response.json()) as PageResponse<AdminUser>;
+    return (await response.json()) as PageResponse<TopicResponse>;
   } catch {
     return null;
   }

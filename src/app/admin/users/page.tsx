@@ -5,6 +5,10 @@ import { fetchAdminUsers } from "@/lib/admin-users";
 import CreateUserModal from "./_components/create-user-modal";
 import UserActions from "./_components/user-actions";
 import PageSizeSelect from "./_components/page-size-select";
+import RefreshButton from "@/components/refresh-button";
+import UsersSearchBar from "./_components/users-search-bar";
+import UsersFilterPanel from "./_components/users-filter-panel";
+import UsersExportButton from "./_components/users-export-button";
 
 export const metadata: Metadata = {
   title: "Người dùng",
@@ -69,11 +73,32 @@ export default async function AdminUsersPage({
   const sortParam = Array.isArray(resolvedSearchParams?.sort)
     ? resolvedSearchParams?.sort[0]
     : resolvedSearchParams?.sort;
+  const emailParam = Array.isArray(resolvedSearchParams?.email)
+    ? resolvedSearchParams?.email[0]
+    : resolvedSearchParams?.email;
+  const usernameParam = Array.isArray(resolvedSearchParams?.username)
+    ? resolvedSearchParams?.username[0]
+    : resolvedSearchParams?.username;
+  const displayNameParam = Array.isArray(resolvedSearchParams?.displayName)
+    ? resolvedSearchParams?.displayName[0]
+    : resolvedSearchParams?.displayName;
+  const roleParam = Array.isArray(resolvedSearchParams?.role)
+    ? resolvedSearchParams?.role[0]
+    : resolvedSearchParams?.role;
+  const statusParam = Array.isArray(resolvedSearchParams?.status)
+    ? resolvedSearchParams?.status[0]
+    : resolvedSearchParams?.status;
 
   const page = Math.max(0, Number(pageParam ?? 0) || 0);
   const size = Math.min(50, Math.max(1, Number(sizeParam ?? 20) || 20));
 
-  const data = await fetchAdminUsers(page, size, sortParam);
+  const data = await fetchAdminUsers(page, size, sortParam, {
+    email: emailParam,
+    username: usernameParam,
+    displayName: displayNameParam,
+    role: roleParam,
+    status: statusParam,
+  });
   const users = data?.content ?? [];
   const totalPages = Math.max(1, data?.totalPages ?? 1);
   const currentPage = Math.min(Math.max(0, data?.number ?? page), totalPages - 1);
@@ -85,6 +110,21 @@ export default async function AdminUsersPage({
     params.set("size", String(size));
     if (sortParam) {
       params.set("sort", String(sortParam));
+    }
+    if (emailParam) {
+      params.set("email", String(emailParam));
+    }
+    if (usernameParam) {
+      params.set("username", String(usernameParam));
+    }
+    if (displayNameParam) {
+      params.set("displayName", String(displayNameParam));
+    }
+    if (roleParam) {
+      params.set("role", String(roleParam));
+    }
+    if (statusParam) {
+      params.set("status", String(statusParam));
     }
     return `/admin/users?${params.toString()}`;
   };
@@ -116,12 +156,7 @@ export default async function AdminUsersPage({
           ) : null}
         </div>
         <div className="flex flex-wrap gap-3">
-          <button
-            type="button"
-            className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/20"
-          >
-            Xuất CSV
-          </button>
+          <UsersExportButton />
           <CreateUserModal />
         </div>
       </section>
@@ -129,25 +164,18 @@ export default async function AdminUsersPage({
       <section className="rounded-3xl border border-white/10 bg-[#0f172a]/80 p-6 shadow-[0_20px_60px_rgba(6,10,18,0.4)] backdrop-blur">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <div className="flex-1 rounded-2xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3 text-sm text-[#e7edf3]">
-                <span className="text-xs text-[#64748b]">
-                  Tìm kiếm theo tên hoặc email
-                </span>
-              </div>
-              <button
-                type="button"
-                className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/20"
-              >
-                Lọc nâng cao
-              </button>
-            </div>
-            <button
-              type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/15"
-            >
-              Làm mới
-            </button>
+            <UsersSearchBar
+              email={emailParam ?? ""}
+              displayName={displayNameParam ?? ""}
+              username={usernameParam ?? ""}
+            />
+            <UsersFilterPanel
+              role={roleParam ?? ""}
+              status={statusParam ?? ""}
+            />
           </div>
+          <RefreshButton className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/15 disabled:opacity-60" />
+        </div>
 
           <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
             <div className="min-w-[980px]">

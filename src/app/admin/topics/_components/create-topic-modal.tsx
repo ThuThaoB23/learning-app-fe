@@ -1,15 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useState } from "react";
-import { getAuthHeader } from "@/lib/client-auth";
+import { useRouter } from "next/navigation";
+import { createAdminTopic } from "@/lib/admin-topics-client";
 import LoadingOverlay from "@/components/loading-overlay";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
-
-export default function CreateUserModal() {
+export default function CreateTopicModal() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -19,17 +16,22 @@ export default function CreateUserModal() {
     message: string;
   } | null>(null);
   const [form, setForm] = useState({
-    email: "",
-    password: "",
-    displayName: "",
+    name: "",
+    description: "",
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleClose = () => {
     setOpen(false);
     setStatus(null);
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -39,63 +41,26 @@ export default function CreateUserModal() {
     setIsLoading(true);
     setStatus(null);
 
-    const authHeader = getAuthHeader();
-    if (!authHeader) {
+    const result = await createAdminTopic({
+      name: form.name,
+      description: form.description,
+    });
+
+    if (!result.ok) {
       setStatus({
         type: "error",
-        message: "Bạn chưa đăng nhập hoặc phiên đã hết hạn.",
+        message: result.message,
       });
       setIsLoading(false);
       return;
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/admin/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
-        },
-        body: JSON.stringify({
-          email: form.email.trim(),
-          password: form.password,
-          displayName: form.displayName.trim(),
-        }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        setStatus({
-          type: "error",
-          message:
-            data?.message ??
-            data?.error ??
-            "Không thể tạo tài khoản. Vui lòng thử lại.",
-        });
-        return;
-      }
-
-      setStatus({
-        type: "success",
-        message: "Tạo tài khoản thành công.",
-      });
-      setForm({ email: "", password: "", displayName: "" });
-      router.refresh();
-      setTimeout(handleClose, 600);
-    } catch (error) {
-      setStatus({
-        type: "error",
-        message: "Không thể kết nối máy chủ. Vui lòng thử lại.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    setStatus({ type: "success", message: "Tạo chủ đề thành công." });
+    setForm({ name: "", description: "" });
+    router.refresh();
+    setTimeout(handleClose, 600);
+    setIsLoading(false);
   };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <>
@@ -104,7 +69,7 @@ export default function CreateUserModal() {
         onClick={() => setOpen(true)}
         className="rounded-full bg-[#e7edf3] px-4 py-2 text-sm font-semibold text-[#0b0f14] transition-all duration-200 ease-out hover:-translate-y-0.5"
       >
-        Tạo tài khoản
+        Tạo chủ đề
       </button>
 
       {open && mounted
@@ -123,48 +88,32 @@ export default function CreateUserModal() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-semibold text-[#e7edf3]">
-                      Tạo tài khoản mới
+                      Tạo chủ đề mới
                     </h2>
                   </div>
                 </div>
 
                 <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                   <label className="block space-y-2 text-sm font-medium text-[#e7edf3]">
-                    Tên hiển thị
+                    Tên chủ đề
                     <input
-                      name="displayName"
-                      value={form.displayName}
+                      name="name"
+                      value={form.name}
                       onChange={handleChange}
                       required
                       className="w-full rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3 text-sm text-[#e7edf3] focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
-                      placeholder="Ví dụ: Minh Anh"
+                      placeholder="Ví dụ: Basic English"
                     />
                   </label>
 
                   <label className="block space-y-2 text-sm font-medium text-[#e7edf3]">
-                    Email
-                    <input
-                      name="email"
-                      type="email"
-                      value={form.email}
+                    Mô tả
+                    <textarea
+                      name="description"
+                      value={form.description}
                       onChange={handleChange}
-                      required
-                      className="w-full rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3 text-sm text-[#e7edf3] focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
-                      placeholder="user@example.com"
-                    />
-                  </label>
-
-                  <label className="block space-y-2 text-sm font-medium text-[#e7edf3]">
-                    Mật khẩu
-                    <input
-                      name="password"
-                      type="password"
-                      value={form.password}
-                      onChange={handleChange}
-                      required
-                      minLength={6}
-                      className="w-full rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3 text-sm text-[#e7edf3] focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
-                      placeholder="Tối thiểu 6 ký tự"
+                      className="min-h-[120px] w-full rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3 text-sm text-[#e7edf3] focus:border-white/30 focus:outline-none focus:ring-2 focus:ring-white/10"
+                      placeholder="Mô tả ngắn về chủ đề"
                     />
                   </label>
 
@@ -193,7 +142,7 @@ export default function CreateUserModal() {
                       disabled={isLoading}
                       className="rounded-full bg-[#e7edf3] px-4 py-2 text-sm font-semibold text-[#0b0f14] transition-all duration-200 ease-out hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      {isLoading ? "Đang tạo..." : "Tạo tài khoản"}
+                      {isLoading ? "Đang tạo..." : "Tạo chủ đề"}
                     </button>
                   </div>
                 </form>

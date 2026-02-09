@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminUser } from "@/lib/admin-users";
 import { getAuthHeader } from "@/lib/client-auth";
+import LoadingOverlay from "@/components/loading-overlay";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
@@ -385,6 +386,7 @@ export default function UserActions({ user }: UserActionsProps) {
                 onClick={closeAllModals}
               />
               <div className="relative z-[131] w-full max-w-xl rounded-3xl border border-white/10 bg-[#0f172a] p-6 shadow-[0_30px_80px_rgba(6,10,18,0.7)]">
+                <LoadingOverlay show={isLoading} />
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
@@ -582,6 +584,7 @@ export default function UserActions({ user }: UserActionsProps) {
                 onClick={closeAllModals}
               />
               <div className="relative z-[131] w-full max-w-lg rounded-3xl border border-white/10 bg-[#0f172a] p-6 shadow-[0_30px_80px_rgba(6,10,18,0.7)]">
+                <LoadingOverlay show={isLoading} />
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
@@ -647,6 +650,7 @@ export default function UserActions({ user }: UserActionsProps) {
                 onClick={closeAllModals}
               />
               <div className="relative z-[131] w-full max-w-md rounded-3xl border border-white/10 bg-[#0f172a] p-6 shadow-[0_30px_80px_rgba(6,10,18,0.7)]">
+                <LoadingOverlay show={isLoading} />
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">

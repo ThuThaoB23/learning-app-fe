@@ -3,18 +3,22 @@ import { cookies } from "next/headers";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
-export type AdminUser = {
+export type VocabularyResponse = {
   id: string;
-  email: string;
-  displayName?: string | null;
-  username?: string | null;
-  avatarUrl?: string | null;
-  role: "USER" | "ADMIN" | string;
+  term?: string | null;
+  termNormalized?: string | null;
+  definition?: string | null;
+  definitionVi?: string | null;
+  examples?: string[] | null;
+  topicIds?: string[] | null;
+  phonetic?: string | null;
+  partOfSpeech?: string | null;
+  language?: string | null;
   status?: string | null;
-  locale?: string | null;
-  timeZone?: string | null;
-  dailyGoal?: number | null;
-  lastLoginAt?: string | null;
+  createdBy?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  deletedAt?: string | null;
 };
 
 export type PageResponse<T> = {
@@ -25,18 +29,17 @@ export type PageResponse<T> = {
   size: number;
 };
 
-export async function fetchAdminUsers(
+export async function fetchVocab(
   page = 0,
   size = 20,
   sort?: string,
   filters?: {
-    email?: string;
-    username?: string;
-    displayName?: string;
-    role?: string;
+    query?: string;
+    topicId?: string;
+    language?: string;
     status?: string;
   },
-): Promise<PageResponse<AdminUser> | null> {
+): Promise<PageResponse<VocabularyResponse> | null> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
   const tokenType = cookieStore.get("tokenType")?.value ?? "Bearer";
@@ -45,23 +48,20 @@ export async function fetchAdminUsers(
     return null;
   }
 
-  const url = new URL(`${API_BASE_URL}/admin/users`);
+  const url = new URL(`${API_BASE_URL}/vocab`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("size", String(size));
   if (sort) {
     url.searchParams.set("sort", sort);
   }
-  if (filters?.email) {
-    url.searchParams.set("email", filters.email);
+  if (filters?.query) {
+    url.searchParams.set("query", filters.query);
   }
-  if (filters?.username) {
-    url.searchParams.set("username", filters.username);
+  if (filters?.topicId) {
+    url.searchParams.set("topicId", filters.topicId);
   }
-  if (filters?.displayName) {
-    url.searchParams.set("displayName", filters.displayName);
-  }
-  if (filters?.role) {
-    url.searchParams.set("role", filters.role);
+  if (filters?.language) {
+    url.searchParams.set("language", filters.language);
   }
   if (filters?.status) {
     url.searchParams.set("status", filters.status);
@@ -79,7 +79,7 @@ export async function fetchAdminUsers(
       return null;
     }
 
-    return (await response.json()) as PageResponse<AdminUser>;
+    return (await response.json()) as PageResponse<VocabularyResponse>;
   } catch {
     return null;
   }
