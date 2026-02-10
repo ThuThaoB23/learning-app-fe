@@ -9,7 +9,7 @@ export type VocabularyResponse = {
   termNormalized?: string | null;
   definition?: string | null;
   definitionVi?: string | null;
-  examples?: string[] | null;
+  examples?: Array<string | VocabularyExample> | null;
   topicIds?: string[] | null;
   phonetic?: string | null;
   partOfSpeech?: string | null;
@@ -19,6 +19,11 @@ export type VocabularyResponse = {
   createdAt?: string | null;
   updatedAt?: string | null;
   deletedAt?: string | null;
+};
+
+export type VocabularyExample = {
+  id?: string | null;
+  value: string;
 };
 
 export type PageResponse<T> = {
@@ -48,7 +53,7 @@ export async function fetchVocab(
     return null;
   }
 
-  const url = new URL(`${API_BASE_URL}/vocab`);
+  const url = new URL(`${API_BASE_URL}/admin/vocab`);
   url.searchParams.set("page", String(page));
   url.searchParams.set("size", String(size));
   if (sort) {

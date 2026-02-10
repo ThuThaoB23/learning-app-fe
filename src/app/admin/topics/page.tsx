@@ -122,7 +122,7 @@ export default async function AdminTopicsPage({
         </div>
 
           <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
-            <div className="min-w-[980px]">
+            <div className="min-w-[1300px]">
               <div className="grid grid-cols-[minmax(0,_1.6fr)_minmax(0,_2fr)_160px_200px_96px] items-center gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
                 <span>Chủ đề</span>
                 <span>Mô tả</span>

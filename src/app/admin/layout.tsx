@@ -42,7 +42,7 @@ export default async function AdminLayout({
       <div className="pointer-events-none absolute -top-48 left-[-20%] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle_at_center,_#1d4ed8,_transparent_70%)] opacity-40" />
       <div className="pointer-events-none absolute -bottom-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,_#fbbf24,_transparent_70%)] opacity-30" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[1500px]">
+      <div className="relative flex min-h-screen w-full">
         <aside className="hidden w-72 flex-col gap-8 border-r border-white/10 bg-[#0f172a]/90 px-6 py-8 backdrop-blur lg:flex">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

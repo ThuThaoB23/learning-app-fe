@@ -3,9 +3,13 @@
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { VocabularyResponse } from "@/lib/admin-vocab";
+import type { VocabularyExample, VocabularyResponse } from "@/lib/admin-vocab";
 import { getAuthHeader } from "@/lib/client-auth";
-import { deleteVocab, updateVocab } from "@/lib/admin-vocab-client";
+import {
+  deleteVocab,
+  fetchAdminVocabDetail,
+  updateVocab,
+} from "@/lib/admin-vocab-client";
 import LoadingOverlay from "@/components/loading-overlay";
 
 const API_BASE_URL =
@@ -42,21 +46,51 @@ type EditForm = {
   term: string;
   definition: string;
   definitionVi: string;
-  examples: string[];
+  examples: EditExample[];
   phonetic: string;
   partOfSpeech: string;
   language: string;
   topicIds: string[];
 };
 
+type EditExample = {
+  id?: string;
+  value: string;
+};
+
+type ApiErrorResponse = {
+  message?: string;
+  error?: string;
+};
+
 const canModerateStatus = (status?: string | null) =>
   !status || status === "PENDING";
+
+const normalizeExamples = (
+  examples?: Array<string | VocabularyExample> | null,
+): EditExample[] => {
+  if (!examples || examples.length === 0) {
+    return [{ value: "" }];
+  }
+
+  const mapped = examples.map((item) => {
+    if (typeof item === "string") {
+      return { value: item };
+    }
+    return {
+      id: item.id ?? undefined,
+      value: item.value ?? "",
+    };
+  });
+
+  return mapped.length > 0 ? mapped : [{ value: "" }];
+};
 
 const createEditForm = (item: VocabularyResponse): EditForm => ({
   term: item.term ?? "",
   definition: item.definition ?? "",
   definitionVi: item.definitionVi ?? "",
-  examples: item.examples && item.examples.length > 0 ? item.examples : [""],
+  examples: normalizeExamples(item.examples),
   phonetic: item.phonetic ?? "",
   partOfSpeech: item.partOfSpeech ?? "",
   language: item.language ?? "en",
@@ -73,11 +107,14 @@ const formatDateTime = (value?: string | null) => {
   }).format(new Date(value));
 };
 
-const formatExamples = (examples?: string[] | null) => {
+const formatExamples = (examples?: Array<string | VocabularyExample> | null) => {
   if (!examples || examples.length === 0) {
     return "—";
   }
-  return examples.join(" • ");
+  return examples
+    .map((item) => (typeof item === "string" ? item : item.value))
+    .filter((item) => item.trim().length > 0)
+    .join(" • ");
 };
 
 export default function VocabActions({ vocab, topics }: VocabActionsProps) {
@@ -92,8 +129,10 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
   const [showEdit, setShowEdit] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [detailVocab, setDetailVocab] = useState<VocabularyResponse | null>(null);
   const [editForm, setEditForm] = useState<EditForm>(() => createEditForm(vocab));
   const [topicQuery, setTopicQuery] = useState("");
+  const modalVocab = detailVocab ?? vocab;
 
   const filteredTopics = useMemo(() => {
     const query = topicQuery.trim().toLowerCase();
@@ -152,8 +191,47 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
     setShowDetail(false);
     setShowEdit(false);
     setStatus(null);
+    setDetailVocab(null);
     setEditForm(createEditForm(vocab));
     setTopicQuery("");
+  };
+
+  const loadDetail = async () => {
+    const result = await fetchAdminVocabDetail<VocabularyResponse>(vocab.id);
+    if (!result.ok) {
+      setStatus({ type: "error", message: result.message });
+      return null;
+    }
+    setDetailVocab(result.data);
+    return result.data;
+  };
+
+  const handleOpenDetail = async () => {
+    setMenuPos(null);
+    setStatus(null);
+    setShowDetail(true);
+    setIsLoading(true);
+
+    const detail = await loadDetail();
+    if (!detail) {
+      setDetailVocab(vocab);
+    }
+    setIsLoading(false);
+  };
+
+  const handleOpenEdit = async () => {
+    setMenuPos(null);
+    setStatus(null);
+    setEditForm(createEditForm(vocab));
+    setTopicQuery("");
+    setShowEdit(true);
+    setIsLoading(true);
+
+    const detail = await loadDetail();
+    if (detail) {
+      setEditForm(createEditForm(detail));
+    }
+    setIsLoading(false);
   };
 
   const toggleTopic = (topicId: string) => {
@@ -171,7 +249,7 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
   const addExample = () => {
     setEditForm((prev) => ({
       ...prev,
-      examples: [...prev.examples, ""],
+      examples: [...prev.examples, { value: "" }],
     }));
   };
 
@@ -179,7 +257,7 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
     setEditForm((prev) => ({
       ...prev,
       examples: prev.examples.map((item, itemIndex) =>
-        itemIndex === index ? value : item,
+        itemIndex === index ? { ...item, value } : item,
       ),
     }));
   };
@@ -189,7 +267,7 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
       if (prev.examples.length === 1) {
         return {
           ...prev,
-          examples: [""],
+          examples: [{ value: "" }],
         };
       }
       return {
@@ -231,7 +309,9 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
         },
       );
 
-      const data = await response.json().catch(() => null);
+      const data = (await response.json().catch(() => null)) as
+        | (VocabularyResponse & ApiErrorResponse)
+        | null;
 
       if (!response.ok) {
         setStatus({
@@ -246,6 +326,9 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
         type: "success",
         message: action === "approve" ? "Đã duyệt từ vựng." : "Đã từ chối.",
       });
+      if (data) {
+        setDetailVocab(data);
+      }
       router.refresh();
       setTimeout(closeAll, 500);
     } catch {
@@ -272,7 +355,7 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
       return;
     }
 
-    const result = await updateVocab(vocab.id, editForm);
+    const result = await updateVocab<VocabularyResponse>(vocab.id, editForm);
     if (!result.ok) {
       setStatus({ type: "error", message: result.message });
       setIsLoading(false);
@@ -283,6 +366,9 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
       type: "success",
       message: "Đã cập nhật từ vựng.",
     });
+    if (result.data) {
+      setDetailVocab(result.data);
+    }
     router.refresh();
     setTimeout(closeAll, 600);
     setIsLoading(false);
@@ -308,7 +394,7 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
     setIsLoading(false);
   };
 
-  const canModerate = canModerateStatus(vocab.status);
+  const canModerate = canModerateStatus(modalVocab.status);
   const canPortal = typeof document !== "undefined";
 
   return (
@@ -331,24 +417,14 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
             >
               <button
                 type="button"
-                onClick={() => {
-                  setMenuPos(null);
-                  setStatus(null);
-                  setShowDetail(true);
-                }}
+                onClick={handleOpenDetail}
                 className="flex w-full items-center rounded-xl px-3 py-2 text-sm text-[#e7edf3] transition hover:bg-white/10"
               >
                 Xem chi tiết
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setMenuPos(null);
-                  setStatus(null);
-                  setEditForm(createEditForm(vocab));
-                  setTopicQuery("");
-                  setShowEdit(true);
-                }}
+                onClick={handleOpenEdit}
                 className="flex w-full items-center rounded-xl px-3 py-2 text-sm text-[#93c5fd] transition hover:bg-white/10"
               >
                 Cập nhật
@@ -474,6 +550,7 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
                 onClick={closeAll}
               />
               <div className="relative z-[131] w-full max-w-3xl rounded-3xl border border-white/10 bg-[#0f172a] p-6 shadow-[0_30px_80px_rgba(6,10,18,0.7)]">
+                <LoadingOverlay show={isLoading} />
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-[#e7edf3]">
                     Chi tiết từ vựng
@@ -492,13 +569,13 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Từ vựng</p>
                       <p className="rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {vocab.term ?? "—"}
+                        {modalVocab.term ?? "—"}
                       </p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Ngôn ngữ</p>
                       <p className="rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {vocab.language ?? "—"}
+                        {modalVocab.language ?? "—"}
                       </p>
                     </div>
                   </div>
@@ -506,13 +583,13 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Định nghĩa (EN)</p>
                       <p className="min-h-[96px] rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {vocab.definition ?? "—"}
+                        {modalVocab.definition ?? "—"}
                       </p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Định nghĩa (VI)</p>
                       <p className="min-h-[96px] rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {vocab.definitionVi ?? "—"}
+                        {modalVocab.definitionVi ?? "—"}
                       </p>
                     </div>
                   </div>
@@ -520,33 +597,33 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Phiên âm</p>
                       <p className="rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {vocab.phonetic ?? "—"}
+                        {modalVocab.phonetic ?? "—"}
                       </p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Từ loại</p>
                       <p className="rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {vocab.partOfSpeech ?? "—"}
+                        {modalVocab.partOfSpeech ?? "—"}
                       </p>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-[#e7edf3]">Ví dụ</p>
                     <p className="rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                      {formatExamples(vocab.examples)}
+                      {formatExamples(modalVocab.examples)}
                     </p>
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Trạng thái</p>
                       <p className="rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {vocab.status ?? "—"}
+                        {modalVocab.status ?? "—"}
                       </p>
                     </div>
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-[#e7edf3]">Cập nhật</p>
                       <p className="rounded-xl border border-white/10 bg-[#0b0f14]/60 px-4 py-3">
-                        {formatDateTime(vocab.updatedAt)}
+                        {formatDateTime(modalVocab.updatedAt)}
                       </p>
                     </div>
                   </div>
@@ -691,7 +768,7 @@ export default function VocabActions({ vocab, topics }: VocabActionsProps) {
                       {editForm.examples.map((example, index) => (
                         <div key={`edit-example-${index}`} className="flex gap-2">
                           <input
-                            value={example}
+                            value={example.value}
                             onChange={(event) =>
                               updateExample(index, event.target.value)
                             }
