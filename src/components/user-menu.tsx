@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import AppLogo from "@/components/app-logo";
 import LogoutButton from "@/components/logout-button";
 
 type UserMenuProps = {
@@ -58,8 +59,8 @@ export default function UserMenu({
         className={triggerClasses}
       >
         <span className="sr-only">Mở menu người dùng</span>
-        <div className="grid h-full w-full place-items-center text-xs font-semibold">
-          LA
+        <div className="grid h-full w-full place-items-center">
+          <AppLogo size={28} className="rounded-full border-0 bg-transparent" />
         </div>
       </button>
 

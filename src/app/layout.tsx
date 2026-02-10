@@ -19,6 +19,11 @@ export const metadata: Metadata = {
     default: "Learning App",
   },
   description: "Ứng dụng học từ vựng với lộ trình và mục tiêu cá nhân.",
+  icons: {
+    icon: "/logo-v2.png?v=2",
+    shortcut: "/favicon.ico?v=2",
+    apple: "/apple-icon.png?v=2",
+  },
 };
 
 export default function RootLayout({

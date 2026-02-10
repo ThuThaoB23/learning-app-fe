@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import AppLogo from "@/components/app-logo";
 
 export const metadata: Metadata = {
   title: "Trang chủ",
@@ -14,7 +15,7 @@ export default function MarketingPage() {
 
       <main className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-16 lg:px-10">
         <div className="inline-flex w-fit items-center gap-3 rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-[#0b0f14] shadow-sm">
-          <span className="h-2 w-2 rounded-full bg-[#34d399]" />
+          <AppLogo size={20} className="rounded-md border-0 bg-transparent" />
           Learning App
         </div>
 

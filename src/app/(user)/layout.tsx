@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import AppLogo from "@/components/app-logo";
 import UserMenu from "@/components/user-menu";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -38,9 +39,7 @@ export default async function UserLayout({
         <aside className="hidden w-72 flex-col gap-8 border-r border-black/5 bg-white/80 px-6 py-8 backdrop-blur lg:flex">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[#0b0f14] text-sm font-semibold text-white">
-                LA
-              </div>
+              <AppLogo priority />
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
                   Workspace
