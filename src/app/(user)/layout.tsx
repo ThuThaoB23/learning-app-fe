@@ -4,21 +4,22 @@ import { redirect } from "next/navigation";
 import AppLogo from "@/components/app-logo";
 import UserMenu from "@/components/user-menu";
 import { getCurrentUser } from "@/lib/auth";
+import UserNav from "./_components/user-nav";
 
 export const metadata: Metadata = {
   title: {
     template: "%s | Learning App",
-    default: "Bảng điều khiển",
+    default: "Dashboard",
   },
   description: "Khu vực người dùng Learning App.",
 };
 
 const navItems = [
   { label: "Tổng quan", href: "/dashboard" },
+  { label: "Khám phá từ", href: "/dashboard/library" },
   { label: "Từ vựng của tôi", href: "/dashboard/vocab" },
-  { label: "Mục tiêu", href: "/dashboard/goals" },
-  { label: "Tiến độ", href: "/dashboard/progress" },
   { label: "Chủ đề", href: "/dashboard/topics" },
+  { label: "Luyện tập", href: "/dashboard/practice" },
   { label: "Cài đặt", href: "/dashboard/settings" },
 ];
 
@@ -54,41 +55,32 @@ export default async function UserLayout({
 
           <div className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
-              Mục tiêu hôm nay
+              Xin chào
             </p>
-            <p className="mt-3 text-3xl font-semibold">24</p>
-            <p className="text-sm text-[#64748b]">từ cần ôn tập</p>
+            <p className="mt-3 line-clamp-1 text-2xl font-semibold">
+              {user.displayName || user.email}
+            </p>
+            <p className="text-sm text-[#64748b]">Sẵn sàng học mỗi ngày.</p>
             <div className="mt-4 h-2 rounded-full bg-black/5">
-              <div className="h-2 w-2/3 rounded-full bg-[#34d399]" />
+              <div className="h-2 w-3/5 rounded-full bg-[#34d399]" />
             </div>
           </div>
 
-          <nav className="space-y-1 text-sm font-medium text-[#64748b]">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-200 ease-out hover:bg-black/5 hover:text-[#0b0f14]"
-              >
-                <span>{item.label}</span>
-                <span className="text-xs text-[#64748b]">→</span>
-              </Link>
-            ))}
-          </nav>
+          <UserNav items={navItems} />
 
           <div className="mt-auto rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
               Tips
             </p>
-            <p className="mt-2 text-sm text-[#0b0f14]">
-              Ôn lại 10 phút mỗi ngày giúp nhớ lâu hơn.
-            </p>
-            <button
-              type="button"
-              className="mt-3 w-full rounded-xl bg-[#0b0f14] px-3 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#111827]"
+              <p className="mt-2 text-sm text-[#0b0f14]">
+                Ôn lại 10 phút mỗi ngày giúp nhớ lâu hơn.
+              </p>
+            <Link
+              href="/dashboard/practice"
+              className="mt-3 block w-full rounded-xl bg-[#0b0f14] px-3 py-2 text-center text-xs font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#111827]"
             >
-              Mở lịch học
-            </button>
+              Mở phiên luyện tập
+            </Link>
           </div>
         </aside>
 
@@ -105,17 +97,22 @@ export default async function UserLayout({
                 <span className="text-xs text-[#64748b]">⌘ K</span>
                 Tìm kiếm nhanh
               </div>
-              <button
-                type="button"
-                className="rounded-full border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-semibold text-[#0b0f14] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#0b0f14]"
+              <Link
+                href="/dashboard/practice"
+                className="hidden rounded-full border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-semibold text-[#0b0f14] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#0b0f14] sm:block"
               >
                 Bắt đầu học
-              </button>
+              </Link>
               <UserMenu displayName={user.displayName} />
             </div>
           </header>
 
-          <main className="flex-1 px-6 py-8 lg:px-10">{children}</main>
+          <main className="flex-1 px-6 py-8 lg:px-10">
+            <div className="mb-6 lg:hidden">
+              <UserNav items={navItems} mobile />
+            </div>
+            {children}
+          </main>
         </div>
       </div>
     </div>

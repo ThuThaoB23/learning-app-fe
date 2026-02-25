@@ -1,26 +1,54 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import StartDailySessionButton from "../_components/start-daily-session-button";
+import { fetchMe, fetchMyVocab, fetchTopics } from "@/lib/user-api";
 
 export const metadata: Metadata = {
   title: "Tổng quan",
   description: "Tổng quan học tập cá nhân.",
 };
 
-const overview = [
-  { label: "Ngày học liên tiếp", value: "12", unit: "ngày" },
-  { label: "Từ đã học", value: "1,280", unit: "từ" },
-  { label: "Đang học", value: "84", unit: "từ" },
-  { label: "Đã thuộc", value: "312", unit: "từ" },
-];
+const toNumber = (value?: number | null) => (typeof value === "number" ? value : 0);
 
-const nextUp = [
-  { title: "Chủ đề: Du lịch", detail: "15 từ mới", progress: "60%" },
-  { title: "Chủ đề: Công việc", detail: "10 từ mới", progress: "40%" },
-  { title: "Ôn tập: Từ khó", detail: "8 từ mới", progress: "25%" },
-];
+export default async function UserDashboardPage() {
+  const [profile, myVocab, topics] = await Promise.all([
+    fetchMe(),
+    fetchMyVocab({ page: 0, size: 100 }),
+    fetchTopics({ page: 0, size: 6, sort: "createdAt,desc" }),
+  ]);
 
-export default function UserDashboardPage() {
+  const vocabList = myVocab?.content ?? [];
+  const total = myVocab?.totalElements ?? vocabList.length;
+  const mastered = vocabList.filter((item) => item.status === "MASTERED").length;
+  const learning = vocabList.filter((item) => item.status === "LEARNING").length;
+  const fresh = vocabList.filter((item) => item.status === "NEW").length;
+  const averageProgress =
+    vocabList.length === 0
+      ? 0
+      : Math.round(
+          vocabList.reduce(
+            (sum, item) => sum + toNumber(item.progress ?? item.process),
+            0,
+          ) / vocabList.length,
+        );
+  const overview = [
+    { label: "Tổng từ cá nhân", value: String(total), unit: "từ" },
+    { label: "Đang học", value: String(learning), unit: "từ" },
+    { label: "Đã thuộc", value: String(mastered), unit: "từ" },
+    { label: "Mới thêm", value: String(fresh), unit: "từ" },
+  ];
+
+  const recentTopics = topics?.content ?? [];
+  const hasError = !profile || !myVocab || !topics;
+
   return (
     <div className="space-y-6">
+      {hasError ? (
+        <div className="rounded-2xl border border-[#fecaca] bg-[#fff1f2] px-4 py-3 text-sm text-[#be123c]">
+          Một số dữ liệu không tải được từ API. Bạn có thể bấm làm mới để thử lại.
+        </div>
+      ) : null}
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {overview.map((item) => (
           <div
@@ -46,49 +74,55 @@ export default function UserDashboardPage() {
             <div>
               <h2 className="text-lg font-semibold">Lịch học hôm nay</h2>
               <p className="text-sm text-[#64748b]">
-                Chia nhỏ mục tiêu để giữ nhịp mỗi ngày.
+                Bắt đầu một phiên daily để lấy bộ câu hỏi theo tiến độ hiện tại.
               </p>
             </div>
-            <button
-              type="button"
-              className="rounded-full border border-[#e5e7eb] bg-white px-3 py-1 text-xs font-semibold text-[#0b0f14] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-[#0b0f14]"
-            >
-              Tuỳ chỉnh
-            </button>
+            <StartDailySessionButton />
           </div>
           <div className="mt-6 space-y-3">
-            {nextUp.map((item) => (
+            {recentTopics.length === 0 ? (
+              <p className="text-sm text-[#64748b]">
+                Chưa có chủ đề khả dụng. Hãy thêm dữ liệu topic ở admin để bắt đầu.
+              </p>
+            ) : (
+              recentTopics.map((item) => (
               <div
-                key={item.title}
+                key={item.id}
                 className="rounded-2xl border border-black/5 bg-[#f7f4ef] px-4 py-3"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    <p className="text-xs text-[#64748b]">{item.detail}</p>
+                    <p className="text-sm font-semibold">{item.name || "Chủ đề chưa có tên"}</p>
+                    <p className="line-clamp-1 text-xs text-[#64748b]">
+                      {item.description || "Chưa có mô tả chủ đề."}
+                    </p>
                   </div>
                   <span className="text-xs font-semibold text-[#3b82f6]">
-                    {item.progress}
+                    {item.status || "ACTIVE"}
                   </span>
                 </div>
                 <div className="mt-3 h-2 rounded-full bg-black/5">
-                  <div className="h-2 w-2/3 rounded-full bg-[#3b82f6]" />
+                  <div className="h-2 w-1/2 rounded-full bg-[#3b82f6]" />
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         <div className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
           <h2 className="text-lg font-semibold">Mục tiêu tuần</h2>
           <p className="mt-1 text-sm text-[#64748b]">
-            3/5 ngày đã hoàn thành mục tiêu.
+            Dựa trên hồ sơ cá nhân và danh sách từ của bạn.
           </p>
           <div className="mt-6 space-y-4">
             {[
-              { label: "Học 60 phút", value: "48 phút" },
-              { label: "Ôn lại 40 từ", value: "30 từ" },
-              { label: "Nghe 20 phút", value: "12 phút" },
+              {
+                label: `Mục tiêu ngày: ${profile?.dailyGoal ?? 30} phút`,
+                value: `${Math.min(profile?.dailyGoal ?? 30, 24)} phút`,
+              },
+              { label: "Tiến độ trung bình", value: `${averageProgress}%` },
+              { label: "Từ đã nắm vững", value: `${mastered} từ` },
             ].map((goal) => (
               <div key={goal.label}>
                 <div className="flex items-center justify-between text-sm">
@@ -101,12 +135,12 @@ export default function UserDashboardPage() {
               </div>
             ))}
           </div>
-          <button
-            type="button"
-            className="mt-6 w-full rounded-xl bg-[#0b0f14] px-4 py-2 text-xs font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#111827]"
+          <Link
+            href="/dashboard/settings"
+            className="mt-6 block w-full rounded-xl bg-[#0b0f14] px-4 py-2 text-center text-xs font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#111827]"
           >
             Cập nhật mục tiêu
-          </button>
+          </Link>
         </div>
       </section>
     </div>
