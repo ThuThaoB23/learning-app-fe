@@ -19,6 +19,7 @@ const navItems = [
   { label: "Chủ đề", href: "/admin/topics" },
   { label: "Từ vựng", href: "/admin/vocab" },
   { label: "Duyệt đóng góp", href: "/admin/reviews" },
+  { label: "Nhật ký hoạt động", href: "/admin/activity-logs" },
   { label: "Báo cáo", href: "/admin/reports" },
   { label: "Thiết lập", href: "/admin/settings" },
 ];

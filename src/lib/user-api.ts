@@ -48,6 +48,7 @@ export type VocabularyResponse = {
   partOfSpeech?: string | null;
   language?: string | null;
   status?: "PENDING" | "APPROVED" | "REJECTED" | string | null;
+  inMyVocab?: boolean | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 };
@@ -70,12 +71,42 @@ export type UserVocabularyResponse = {
   vocabulary?: VocabularyResponse | null;
 };
 
+export type VocabularyContributionResponse = {
+  id: string;
+  contributorUserId?: string | null;
+  contributorDisplayName?: string | null;
+  term?: string | null;
+  definition?: string | null;
+  definitionVi?: string | null;
+  examples?: string[] | null;
+  phonetic?: string | null;
+  partOfSpeech?: string | null;
+  language?: string | null;
+  topicIds?: string[] | null;
+  status?:
+    | "SUBMITTED"
+    | "IN_REVIEW"
+    | "APPROVED"
+    | "REJECTED"
+    | "CANCELED"
+    | string
+    | null;
+  reviewNote?: string | null;
+  rejectReason?: string | null;
+  approvedVocabularyId?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 export type TestItemResponse = {
   id: string;
   position?: number | null;
   questionType?: string | null;
   questionPayload?: Record<string, unknown> | null;
   status?: "PENDING" | "CORRECT" | "WRONG" | "SKIPPED" | string | null;
+  expected?: string | null;
   userAnswer?: string | null;
   timeMs?: number | null;
 };
@@ -186,6 +217,31 @@ export const fetchMyVocab = (params?: {
   page?: number;
   size?: number;
   sort?: string;
+  query?: string;
+}) => {
+  const query = new URLSearchParams();
+  query.set("page", String(params?.page ?? 0));
+  query.set("size", String(params?.size ?? 20));
+  if (params?.sort) {
+    query.set("sort", params.sort);
+  }
+  if (params?.query) {
+    query.set("query", params.query);
+  }
+  if (params?.status) {
+    query.set("status", params.status);
+  }
+
+  return authFetchJson<PageResponse<UserVocabularyResponse>>(
+    `/me/vocab?${query.toString()}`,
+  );
+};
+
+export const fetchMyVocabContributions = (params?: {
+  status?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
 }) => {
   const query = new URLSearchParams();
   query.set("page", String(params?.page ?? 0));
@@ -197,8 +253,8 @@ export const fetchMyVocab = (params?: {
     query.set("status", params.status);
   }
 
-  return authFetchJson<PageResponse<UserVocabularyResponse>>(
-    `/me/vocab?${query.toString()}`,
+  return authFetchJson<PageResponse<VocabularyContributionResponse>>(
+    `/me/vocab/contributions?${query.toString()}`,
   );
 };
 

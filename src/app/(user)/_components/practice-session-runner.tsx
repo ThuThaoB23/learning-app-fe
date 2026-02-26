@@ -13,6 +13,7 @@ type PracticeSessionRunnerProps = {
 type ItemResult = {
   status?: string;
   message?: string;
+  expected?: string;
 };
 
 type OptionItem = {
@@ -132,6 +133,142 @@ const extractOptions = (payload: Record<string, unknown>, questionType?: string 
   return [];
 };
 
+const pickExpectedString = (payload: Record<string, unknown>) => {
+  const directKeys = [
+    "expected",
+    "expectedAnswer",
+    "correctAnswer",
+    "answerKey",
+    "solution",
+    "target",
+    "targetWord",
+    "fullAnswer",
+    "term",
+    "word",
+    "translation",
+  ];
+  for (const key of directKeys) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  const nested = getNested(payload, [
+    "question.expected",
+    "question.expectedAnswer",
+    "question.correctAnswer",
+    "question.answerKey",
+    "question.solution",
+    "question.term",
+    "question.word",
+    "data.expected",
+    "data.expectedAnswer",
+    "data.correctAnswer",
+    "data.term",
+    "meta.expected",
+  ]);
+  if (typeof nested === "string" && nested.trim()) {
+    return nested.trim();
+  }
+
+  return undefined;
+};
+
+const extractExpectedFromPayload = (
+  payload: Record<string, unknown>,
+  questionType?: string | null,
+  options?: OptionItem[],
+) => {
+  const normalizedType = (questionType || "").toUpperCase();
+
+  const booleanCorrect =
+    typeof payload.correct === "boolean"
+      ? String(payload.correct)
+      : typeof payload.isCorrect === "boolean"
+        ? String(payload.isCorrect)
+        : typeof getNested(payload, ["question.correct", "data.correct"]) === "boolean"
+          ? String(getNested(payload, ["question.correct", "data.correct"]))
+          : undefined;
+  if (normalizedType === "TRUE_FALSE" && booleanCorrect) {
+    return booleanCorrect;
+  }
+
+  const optionIndexCandidates = [
+    payload.correctIndex,
+    payload.answerIndex,
+    payload.correctOptionIndex,
+    payload.expectedIndex,
+    getNested(payload, [
+      "question.correctIndex",
+      "question.answerIndex",
+      "data.correctIndex",
+      "data.answerIndex",
+    ]),
+  ];
+  for (const candidate of optionIndexCandidates) {
+    if (typeof candidate === "number" && Number.isInteger(candidate) && options?.length) {
+      const option = options[candidate];
+      if (option?.value) {
+        return option.value;
+      }
+    }
+  }
+
+  const optionValueCandidates = [
+    payload.correctOption,
+    payload.correctValue,
+    payload.answerValue,
+    payload.expected,
+    getNested(payload, [
+      "question.correctOption",
+      "question.correctValue",
+      "data.correctOption",
+      "data.correctValue",
+    ]),
+  ];
+  for (const candidate of optionValueCandidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      return candidate.trim();
+    }
+  }
+
+  const rawOptions =
+    (Array.isArray(payload.options) && payload.options) ||
+    (Array.isArray(payload.choices) && payload.choices) ||
+    (Array.isArray(payload.candidates) && payload.candidates) ||
+    (Array.isArray(getNested(payload, ["question.options", "question.choices"])) &&
+      (getNested(payload, ["question.options", "question.choices"]) as unknown[])) ||
+    null;
+
+  if (Array.isArray(rawOptions)) {
+    for (const raw of rawOptions) {
+      const record = toRecord(raw);
+      const isCorrectOption =
+        record.correct === true ||
+        record.isCorrect === true ||
+        record.answer === true;
+      if (!isCorrectOption) {
+        continue;
+      }
+      const value =
+        (typeof record.value === "string" && record.value) ||
+        (typeof record.key === "string" && record.key) ||
+        (typeof record.code === "string" && record.code) ||
+        (typeof record.id === "string" && record.id) ||
+        (typeof record.label === "string" && record.label) ||
+        (typeof record.text === "string" && record.text) ||
+        (typeof record.content === "string" && record.content) ||
+        "";
+      if (value.trim()) {
+        return value.trim();
+      }
+    }
+  }
+
+  return pickExpectedString(payload);
+};
+
 const normalizeResult = (data: unknown): ItemResult => {
   const record = toRecord(data);
   const status =
@@ -142,11 +279,26 @@ const normalizeResult = (data: unknown): ItemResult => {
     (typeof record.message === "string" && record.message) ||
     (typeof record.feedback === "string" && record.feedback) ||
     undefined;
-  return { status, message };
+  const expected =
+    (typeof record.expected === "string" && record.expected) ||
+    (typeof record.expectedAnswer === "string" && record.expectedAnswer) ||
+    (typeof record.correctAnswer === "string" && record.correctAnswer) ||
+    undefined;
+  return { status, message, expected };
 };
 
 const normalizeStatus = (status?: string | null) =>
   (status || "PENDING").toUpperCase();
+
+const isCorrectStatus = (status?: string | null) => {
+  const normalized = normalizeStatus(status);
+  return normalized === "CORRECT" || normalized === "RIGHT";
+};
+
+const isWrongStatus = (status?: string | null) => {
+  const normalized = normalizeStatus(status);
+  return normalized === "WRONG" || normalized === "INCORRECT";
+};
 
 const isAnsweredStatus = (status?: string | null) =>
   normalizeStatus(status) !== "PENDING";
@@ -242,7 +394,36 @@ export default function PracticeSessionRunner({
   const currentStatus = normalizeStatus(
     currentResult?.status || currentItem?.status || "PENDING",
   );
+  const currentStatusIsCorrect = isCorrectStatus(currentStatus);
+  const currentStatusIsWrong = isWrongStatus(currentStatus);
   const isCurrentAnswered = isAnsweredStatus(currentStatus);
+  const expectedFromItem = useMemo(() => {
+    const itemRecord = toRecord(currentItem);
+    const expected =
+      (typeof itemRecord.expected === "string" && itemRecord.expected) ||
+      (typeof itemRecord.expectedAnswer === "string" && itemRecord.expectedAnswer) ||
+      (typeof itemRecord.correctAnswer === "string" && itemRecord.correctAnswer) ||
+      "";
+    return expected.trim() || undefined;
+  }, [currentItem]);
+  const expectedFromPayload = useMemo(
+    () => extractExpectedFromPayload(payload, currentItem?.questionType, options),
+    [payload, currentItem?.questionType, options],
+  );
+  const currentExpectedAnswer =
+    currentStatusIsWrong
+      ? (() => {
+          const rawExpected =
+            currentResult?.expected || expectedFromItem || expectedFromPayload;
+          if (!rawExpected) {
+            return null;
+          }
+          const mappedLabel =
+            options.find((option) => option.value === rawExpected)?.label ||
+            options.find((option) => option.label === rawExpected)?.label;
+          return mappedLabel || rawExpected;
+        })()
+      : null;
   const currentFillMissingValues =
     currentItem && fillMissingConfig
       ? fillMissingAnswers[currentItem.id] ??
@@ -325,8 +506,8 @@ export default function PracticeSessionRunner({
             results[item.id]?.status || item.status || "PENDING",
           );
           const isCurrent = index === currentIndex;
-          const isCorrect = itemStatus === "CORRECT";
-          const isWrong = itemStatus === "WRONG";
+          const isCorrect = isCorrectStatus(itemStatus);
+          const isWrong = isWrongStatus(itemStatus);
           const done = isAnsweredStatus(itemStatus);
           return (
             <button
@@ -356,7 +537,15 @@ export default function PracticeSessionRunner({
           <h3 className="text-lg font-semibold text-[#0b0f14]">
             Câu {currentIndex + 1}: {currentItem.questionType || "UNKNOWN"}
           </h3>
-          <span className="rounded-full border border-[#e5e7eb] px-3 py-1 text-xs font-semibold text-[#64748b]">
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+              currentStatusIsCorrect
+                ? "border-[#34d399]/40 bg-[#ecfdf5] text-[#166534]"
+                : currentStatusIsWrong
+                  ? "border-[#fb7185]/40 bg-[#fff1f2] text-[#be123c]"
+                  : "border-[#e5e7eb] text-[#64748b]"
+            }`}
+          >
             {currentResult?.status || currentItem.status || "PENDING"}
           </span>
         </div>
@@ -490,7 +679,22 @@ export default function PracticeSessionRunner({
 
         {error ? <p className="mt-3 text-sm text-[#be123c]">{error}</p> : null}
         {currentResult?.message ? (
-          <p className="mt-3 text-sm text-[#166534]">{currentResult.message}</p>
+          <p
+            className={`mt-3 text-sm ${
+              currentStatusIsCorrect
+                ? "text-[#166534]"
+                : currentStatusIsWrong
+                  ? "text-[#be123c]"
+                  : "text-[#475569]"
+            }`}
+          >
+            {currentResult.message}
+          </p>
+        ) : null}
+        {currentExpectedAnswer ? (
+          <p className="mt-2 text-sm font-medium text-[#be123c]">
+            Đáp án đúng: <span className="font-semibold">{currentExpectedAnswer}</span>
+          </p>
         ) : null}
 
         <div className="mt-5 flex flex-wrap items-center gap-2">

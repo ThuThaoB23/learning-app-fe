@@ -336,9 +336,21 @@ export default function UserActions({ user }: UserActionsProps) {
         ? createPortal(
             <div
               ref={menuRef}
-              className="fixed z-[120] w-48 rounded-2xl border border-white/10 bg-[#0f172a] p-2 shadow-[0_20px_60px_rgba(6,10,18,0.6)]"
+              className="fixed z-[120] w-56 rounded-2xl border border-white/10 bg-[#0f172a] p-2 shadow-[0_20px_60px_rgba(6,10,18,0.6)]"
               style={{ top: menuPos.top, right: menuPos.right }}
             >
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuPos(null);
+                  router.push(
+                    `/admin/activity-logs?userId=${user.id}&sort=createdAt,desc`,
+                  );
+                }}
+                className="flex w-full items-center rounded-xl px-3 py-2 text-sm text-[#e7edf3] transition hover:bg-white/10"
+              >
+                Xem activity log
+              </button>
               <button
                 type="button"
                 onClick={() => {

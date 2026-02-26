@@ -49,6 +49,25 @@ export type VocabularyImportResultResponse = {
   errors?: VocabularyImportError[];
 };
 
+export type VocabularyContributionResponse = {
+  id: string;
+  term?: string | null;
+  definition?: string | null;
+  definitionVi?: string | null;
+  examples?: string[] | null;
+  phonetic?: string | null;
+  partOfSpeech?: string | null;
+  language?: string | null;
+  topicIds?: string[] | null;
+  status?: string | null;
+  reviewNote?: string | null;
+  rejectReason?: string | null;
+  approvedVocabularyId?: string | null;
+  reviewedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 const UNAUTHORIZED_MESSAGE = "Bạn chưa đăng nhập hoặc phiên đã hết hạn.";
 const NETWORK_ERROR_MESSAGE = "Không thể kết nối máy chủ. Vui lòng thử lại.";
 
@@ -248,6 +267,76 @@ export const deleteVocab = async (
     });
 
     return await parseMutationResponse<null>(response, "Không thể xóa từ vựng.");
+  } catch {
+    return { ok: false, message: NETWORK_ERROR_MESSAGE };
+  }
+};
+
+export const approveVocabContribution = async <
+  TResponse = VocabularyContributionResponse,
+>(
+  id: string,
+  input?: { reviewNote?: string },
+): Promise<MutationResult<TResponse>> => {
+  const authHeader = getAuthHeader();
+  if (!authHeader) {
+    return { ok: false, message: UNAUTHORIZED_MESSAGE };
+  }
+
+  const payload =
+    input?.reviewNote && input.reviewNote.trim()
+      ? { reviewNote: input.reviewNote.trim() }
+      : undefined;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/vocab-contributions/${id}/approve`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authHeader,
+      },
+      body: JSON.stringify(payload ?? {}),
+    });
+
+    return await parseMutationResponse<TResponse>(
+      response,
+      "Không thể duyệt đóng góp từ vựng.",
+    );
+  } catch {
+    return { ok: false, message: NETWORK_ERROR_MESSAGE };
+  }
+};
+
+export const rejectVocabContribution = async <
+  TResponse = VocabularyContributionResponse,
+>(
+  id: string,
+  input: { rejectReason: string; reviewNote?: string },
+): Promise<MutationResult<TResponse>> => {
+  const authHeader = getAuthHeader();
+  if (!authHeader) {
+    return { ok: false, message: UNAUTHORIZED_MESSAGE };
+  }
+
+  const payload = {
+    rejectReason: input.rejectReason.trim(),
+    reviewNote: input.reviewNote?.trim() || undefined,
+  };
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/vocab-contributions/${id}/reject`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: authHeader,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    return await parseMutationResponse<TResponse>(
+      response,
+      "Không thể từ chối đóng góp từ vựng.",
+    );
   } catch {
     return { ok: false, message: NETWORK_ERROR_MESSAGE };
   }

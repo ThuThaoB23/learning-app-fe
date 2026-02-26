@@ -6,6 +6,28 @@ const API_BASE_URL =
 type MutationResult<T = unknown> =
   | { ok: true; data: T | null }
   | { ok: false; message: string };
+type QueryResult<T = unknown> =
+  | { ok: true; data: T }
+  | { ok: false; message: string };
+
+export type VocabularySearchItem = {
+  id: string;
+  term?: string | null;
+  definition?: string | null;
+  definitionVi?: string | null;
+  partOfSpeech?: string | null;
+  language?: string | null;
+  status?: string | null;
+  inMyVocab?: boolean | null;
+};
+
+export type VocabularySearchPageResponse = {
+  content: VocabularySearchItem[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+};
 
 type UpdateProfileInput = {
   username?: string;
@@ -191,6 +213,62 @@ export const fetchSessionDetailClient = async <
     return { ok: true as const, data };
   } catch {
     return { ok: false as const, message: NETWORK_ERROR_MESSAGE };
+  }
+};
+
+export const searchVocabClient = async (
+  params: {
+    query: string;
+    language?: string;
+    page?: number;
+    size?: number;
+    status?: string;
+    includeMyVocab?: boolean;
+  },
+): Promise<QueryResult<VocabularySearchPageResponse>> => {
+  const authHeader = getAuthHeader();
+  if (!authHeader) {
+    return { ok: false, message: UNAUTHORIZED_MESSAGE };
+  }
+
+  const query = new URLSearchParams();
+  query.set("query", params.query.trim());
+  query.set("page", String(Math.max(0, params.page ?? 0)));
+  query.set("size", String(Math.min(20, Math.max(1, params.size ?? 8))));
+  if (params.language?.trim()) {
+    query.set("language", params.language.trim());
+  }
+  if (params.status?.trim()) {
+    query.set("status", params.status.trim());
+  }
+  if (typeof params.includeMyVocab === "boolean") {
+    query.set("includeMyVocab", String(params.includeMyVocab));
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/vocab?${query.toString()}`, {
+      method: "GET",
+      headers: {
+        Authorization: authHeader,
+      },
+      cache: "no-store",
+    });
+
+    const data = (await response.json().catch(() => null)) as
+      | (VocabularySearchPageResponse & { message?: string; error?: string })
+      | null;
+
+    if (!response.ok || !data) {
+      return {
+        ok: false,
+        message:
+          data?.message ?? data?.error ?? "Không thể tìm từ vựng trong hệ thống.",
+      };
+    }
+
+    return { ok: true, data };
+  } catch {
+    return { ok: false, message: NETWORK_ERROR_MESSAGE };
   }
 };
 

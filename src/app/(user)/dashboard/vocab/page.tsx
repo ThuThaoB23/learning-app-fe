@@ -90,7 +90,15 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
               </button>
             ))}
           </form>
-          <RefreshButton className="rounded-full border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/dashboard/vocab/new"
+              className="rounded-full bg-[#0b0f14] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#111827]"
+            >
+              Thêm mới từ vựng
+            </Link>
+            <RefreshButton className="rounded-full border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]" />
+          </div>
         </div>
         <div className="mt-4 text-sm text-[#64748b]">
           Tổng: <span className="font-semibold text-[#0b0f14]">{data?.totalElements ?? 0}</span> từ

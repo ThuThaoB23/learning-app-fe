@@ -7,14 +7,18 @@ import { extractSessionScore, formatSessionScore } from "@/lib/session-score";
 
 type SessionStateActionsProps = {
   sessionId: string;
+  sessionStatus?: string | null;
 };
 
 export default function SessionStateActions({
   sessionId,
+  sessionStatus,
 }: SessionStateActionsProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const normalizedStatus = (sessionStatus || "ACTIVE").toUpperCase();
+  const canChangeState = normalizedStatus === "ACTIVE";
 
   const handleComplete = async () => {
     setIsLoading(true);
@@ -56,24 +60,30 @@ export default function SessionStateActions({
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={handleComplete}
-          disabled={isLoading}
-          className="rounded-full bg-[#0b0f14] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#111827] disabled:opacity-70"
-        >
-          Hoàn thành phiên
-        </button>
-        <button
-          type="button"
-          onClick={handleAbandon}
-          disabled={isLoading}
-          className="rounded-full border border-[#fb7185]/40 px-3 py-1.5 text-xs font-semibold text-[#be123c] transition hover:bg-[#fff1f2] disabled:opacity-70"
-        >
-          Hủy phiên
-        </button>
-      </div>
+      {canChangeState ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleComplete}
+            disabled={isLoading}
+            className="rounded-full bg-[#0b0f14] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#111827] disabled:opacity-70"
+          >
+            Hoàn thành phiên
+          </button>
+          <button
+            type="button"
+            onClick={handleAbandon}
+            disabled={isLoading}
+            className="rounded-full border border-[#fb7185]/40 px-3 py-1.5 text-xs font-semibold text-[#be123c] transition hover:bg-[#fff1f2] disabled:opacity-70"
+          >
+            Hủy phiên
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-[#64748b]">
+          Phiên đã ở trạng thái `{normalizedStatus}`, không còn thao tác hoàn thành/hủy.
+        </p>
+      )}
       {message ? (
         <p className="text-xs text-[#64748b]" aria-live="polite">
           {message}

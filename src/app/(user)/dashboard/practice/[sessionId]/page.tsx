@@ -57,7 +57,10 @@ export default async function PracticeSessionPage({
             ) : null}
           </div>
           <div className="flex flex-wrap gap-2">
-            <SessionStateActions sessionId={session.id} />
+            <SessionStateActions
+              sessionId={session.id}
+              sessionStatus={session.status}
+            />
             <Link
               href="/dashboard/practice"
               className="inline-flex rounded-full border border-[#e5e7eb] px-4 py-2 text-sm font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]"

@@ -36,7 +36,7 @@ export default async function UserLayout({
 
   return (
     <div className="min-h-screen bg-[#f7f4ef] text-[#0b0f14]">
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[1400px]">
+      <div className="relative flex min-h-screen w-full">
         <aside className="hidden w-72 flex-col gap-8 border-r border-black/5 bg-white/80 px-6 py-8 backdrop-blur lg:flex">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

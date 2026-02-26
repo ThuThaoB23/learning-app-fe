@@ -17,6 +17,31 @@ export type AdminUser = {
   lastLoginAt?: string | null;
 };
 
+export type UserActivityType =
+  | "REGISTER_ACCOUNT"
+  | "COMPLETE_STUDY_SESSION"
+  | "ADD_MYVOCAB"
+  | "SUBMIT_VOCAB_CONTRIBUTION"
+  | "APPROVE_VOCAB_CONTRIBUTION"
+  | "REJECT_VOCAB_CONTRIBUTION";
+
+export type UserActivityTargetType =
+  | "ACCOUNT"
+  | "TEST_SESSION"
+  | "VOCABULARY"
+  | "VOCABULARY_CONTRIBUTION";
+
+export type UserActivityLogResponse = {
+  id: string;
+  userId: string;
+  userDisplayName?: string | null;
+  activityType?: UserActivityType | string | null;
+  targetType?: UserActivityTargetType | string | null;
+  targetId?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt?: string | null;
+};
+
 export type PageResponse<T> = {
   content: T[];
   totalElements: number;
@@ -80,6 +105,121 @@ export async function fetchAdminUsers(
     }
 
     return (await response.json()) as PageResponse<AdminUser>;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchAdminUserActivityLogs(
+  userId: string,
+  params?: {
+    activityType?: string;
+    targetType?: string;
+    from?: string;
+    to?: string;
+    page?: number;
+    size?: number;
+    sort?: string;
+  },
+): Promise<PageResponse<UserActivityLogResponse> | null> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const tokenType = cookieStore.get("tokenType")?.value ?? "Bearer";
+
+  if (!accessToken || !userId.trim()) {
+    return null;
+  }
+
+  const url = new URL(`${API_BASE_URL}/admin/users/${userId}/activity-logs`);
+  url.searchParams.set("page", String(params?.page ?? 0));
+  url.searchParams.set("size", String(params?.size ?? 20));
+  if (params?.sort) {
+    url.searchParams.set("sort", params.sort);
+  }
+  if (params?.activityType) {
+    url.searchParams.set("activityType", params.activityType);
+  }
+  if (params?.targetType) {
+    url.searchParams.set("targetType", params.targetType);
+  }
+  if (params?.from) {
+    url.searchParams.set("from", params.from);
+  }
+  if (params?.to) {
+    url.searchParams.set("to", params.to);
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `${decodeURIComponent(tokenType)} ${decodeURIComponent(accessToken)}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as PageResponse<UserActivityLogResponse>;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchAdminActivityLogs(params?: {
+  userId?: string;
+  activityType?: string;
+  targetType?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<PageResponse<UserActivityLogResponse> | null> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const tokenType = cookieStore.get("tokenType")?.value ?? "Bearer";
+
+  if (!accessToken) {
+    return null;
+  }
+
+  const url = new URL(`${API_BASE_URL}/admin/activity-logs`);
+  url.searchParams.set("page", String(params?.page ?? 0));
+  url.searchParams.set("size", String(params?.size ?? 20));
+  if (params?.sort) {
+    url.searchParams.set("sort", params.sort);
+  }
+  if (params?.userId) {
+    url.searchParams.set("userId", params.userId);
+  }
+  if (params?.activityType) {
+    url.searchParams.set("activityType", params.activityType);
+  }
+  if (params?.targetType) {
+    url.searchParams.set("targetType", params.targetType);
+  }
+  if (params?.from) {
+    url.searchParams.set("from", params.from);
+  }
+  if (params?.to) {
+    url.searchParams.set("to", params.to);
+  }
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `${decodeURIComponent(tokenType)} ${decodeURIComponent(accessToken)}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as PageResponse<UserActivityLogResponse>;
   } catch {
     return null;
   }
