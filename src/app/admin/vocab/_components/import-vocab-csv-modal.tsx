@@ -268,6 +268,11 @@ export default function ImportVocabCsvModal() {
       setIsLoading(false);
       return;
     }
+    if (!result.data) {
+      setStatus({ type: "error", message: "API không trả về kết quả import." });
+      setIsLoading(false);
+      return;
+    }
 
     setImportResult(result.data);
     setStatus({

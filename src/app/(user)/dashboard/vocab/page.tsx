@@ -161,7 +161,7 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
                         </div>
                       </div>
                       <MyVocabActions
-                        vocabularyId={item.vocabularyId}
+                        vocabularyId={item.vocabularyId ?? undefined}
                         currentStatus={item.status}
                       />
                     </div>

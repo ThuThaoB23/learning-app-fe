@@ -1,7 +1,11 @@
 import { getAuthHeader } from "@/lib/client-auth";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+  typeof window === "undefined"
+    ? process.env.INTERNAL_API_BASE_URL ??
+      process.env.NEXT_PUBLIC_API_BASE_URL ??
+      "http://localhost:8080"
+    : process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 type MutationResult<T = unknown> =
   | { ok: true; data: T | null }
@@ -158,7 +162,7 @@ export const updateVocab = async <TResponse = Record<string, unknown>>(
           value,
         };
       })
-      .filter((item): item is { id?: string; value: string } => Boolean(item)),
+      .filter((item): item is { id: string | undefined; value: string } => Boolean(item)),
     phonetic: input.phonetic?.trim() || undefined,
     partOfSpeech: input.partOfSpeech?.trim() || undefined,
     language: input.language.trim(),
@@ -341,3 +345,4 @@ export const rejectVocabContribution = async <
     return { ok: false, message: NETWORK_ERROR_MESSAGE };
   }
 };
+

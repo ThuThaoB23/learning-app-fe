@@ -5,7 +5,11 @@ import { useState } from "react";
 import { getAuthHeader } from "@/lib/client-auth";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+  typeof window === "undefined"
+    ? process.env.INTERNAL_API_BASE_URL ??
+      process.env.NEXT_PUBLIC_API_BASE_URL ??
+      "http://localhost:8080"
+    : process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 export default function TopicsExportButton() {
   const searchParams = useSearchParams();
@@ -66,3 +70,4 @@ export default function TopicsExportButton() {
     </button>
   );
 }
+
