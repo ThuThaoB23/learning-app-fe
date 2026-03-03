@@ -145,7 +145,7 @@ export function VocabPageSection({
   className = "",
 }: {
   eyebrow: string;
-  title: string;
+  title?: string;
   description?: string;
   actions?: ReactNode;
   children: ReactNode;
@@ -158,7 +158,9 @@ export function VocabPageSection({
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#64748b]">
             {eyebrow}
           </p>
-          <h2 className="mt-2 text-lg font-semibold text-[#f8fafc]">{title}</h2>
+          {title ? (
+            <h2 className="mt-2 text-lg font-semibold text-[#f8fafc]">{title}</h2>
+          ) : null}
           {description ? (
             <p className="mt-2 text-sm text-[#94a3b8]">{description}</p>
           ) : null}
