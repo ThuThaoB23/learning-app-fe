@@ -1,31 +1,157 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { UserProfileResponse } from "@/lib/user-api";
-import { updateMe } from "@/lib/user-actions-client";
+import { updateMe, updateMyAvatar } from "@/lib/user-actions-client";
 
 type UpdateProfileFormProps = {
   profile: UserProfileResponse;
 };
 
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_AVATAR_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+]);
+
 export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
+  const [avatarStatus, setAvatarStatus] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
   const [status, setStatus] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(
+    profile.avatarUrl ?? "",
+  );
   const [form, setForm] = useState({
     username: profile.username ?? "",
     displayName: profile.displayName ?? "",
-    avatarUrl: profile.avatarUrl ?? "",
     locale: profile.locale ?? "vi",
     timeZone: profile.timeZone ?? "Asia/Ho_Chi_Minh",
     dailyGoal: profile.dailyGoal ?? 30,
   });
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewUrl) {
+        URL.revokeObjectURL(avatarPreviewUrl);
+      }
+    };
+  }, [avatarPreviewUrl]);
+
+  const previewAvatar = avatarPreviewUrl ?? currentAvatarUrl;
+
+  const mapAvatarErrorMessage = (errorCode?: string, fallback?: string) => {
+    switch (errorCode) {
+      case "INVALID_FILE":
+        return "Vui lòng chọn một tệp ảnh hợp lệ.";
+      case "FILE_TOO_LARGE":
+        return "Ảnh vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.";
+      case "INVALID_FILE_TYPE":
+        return "Định dạng không hỗ trợ. Chỉ nhận JPG, PNG, WEBP hoặc GIF.";
+      case "AVATAR_UPLOAD_FAILED":
+        return "Không thể upload avatar lên hệ thống lưu trữ. Vui lòng thử lại.";
+      default:
+        return fallback ?? "Không thể cập nhật ảnh đại diện.";
+    }
+  };
+
+  const resetAvatarInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAvatarFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    if (file.size > MAX_AVATAR_SIZE_BYTES) {
+      setAvatarStatus({
+        type: "error",
+        message: "Ảnh vượt quá 5MB. Vui lòng chọn ảnh nhỏ hơn.",
+      });
+      resetAvatarInput();
+      return;
+    }
+
+    if (!ALLOWED_AVATAR_TYPES.has(file.type)) {
+      setAvatarStatus({
+        type: "error",
+        message: "Định dạng không hỗ trợ. Chỉ nhận JPG, PNG, WEBP hoặc GIF.",
+      });
+      resetAvatarInput();
+      return;
+    }
+
+    setAvatarPreviewUrl((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return URL.createObjectURL(file);
+    });
+    setSelectedAvatar(file);
+    setAvatarStatus({
+      type: "info",
+      message: `Đã chọn ${file.name}. Bấm "Upload ảnh" để áp dụng.`,
+    });
+  };
+
+  const handleAvatarUpload = async () => {
+    if (!selectedAvatar) {
+      setAvatarStatus({
+        type: "error",
+        message: "Vui lòng chọn ảnh trước khi upload.",
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setAvatarStatus(null);
+
+    const result = await updateMyAvatar<UserProfileResponse>(selectedAvatar);
+    if (!result.ok) {
+      setAvatarStatus({
+        type: "error",
+        message: mapAvatarErrorMessage(result.errorCode, result.message),
+      });
+      setIsUploadingAvatar(false);
+      return;
+    }
+
+    const nextAvatarUrl = result.data?.avatarUrl ?? currentAvatarUrl;
+    setCurrentAvatarUrl(nextAvatarUrl ?? "");
+    setAvatarPreviewUrl((prev) => {
+      if (prev) {
+        URL.revokeObjectURL(prev);
+      }
+      return null;
+    });
+    setSelectedAvatar(null);
+    resetAvatarInput();
+    setAvatarStatus({
+      type: "success",
+      message: "Cập nhật ảnh đại diện thành công.",
+    });
+    router.refresh();
+    setIsUploadingAvatar(false);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setStatus(null);
@@ -33,7 +159,6 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
     const result = await updateMe({
       username: form.username,
       displayName: form.displayName,
-      avatarUrl: form.avatarUrl,
       locale: form.locale,
       timeZone: form.timeZone,
       dailyGoal: form.dailyGoal,
@@ -52,6 +177,63 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="rounded-2xl border border-[#e5e7eb] bg-[#f8fafc] p-4">
+        <p className="text-sm font-semibold text-[#0f172a]">Ảnh đại diện</p>
+        <p className="mt-1 text-xs text-[#64748b]">
+          Dùng endpoint `PATCH /me/avatar` (multipart/form-data, field `file`).
+          Hỗ trợ JPG, PNG, WEBP, GIF tối đa 5MB.
+        </p>
+
+        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+          {previewAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewAvatar}
+              alt="Avatar preview"
+              className="h-24 w-24 rounded-full border border-[#cbd5e1] object-cover"
+            />
+          ) : (
+            <div className="flex h-24 w-24 items-center justify-center rounded-full border border-dashed border-[#cbd5e1] bg-white text-xs text-[#64748b]">
+              Chưa có ảnh
+            </div>
+          )}
+
+          <div className="flex-1 space-y-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={handleAvatarFileChange}
+              className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-[#0b0f14] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-[#111827]"
+            />
+
+            <button
+              type="button"
+              onClick={handleAvatarUpload}
+              disabled={isUploadingAvatar || !selectedAvatar}
+              className="rounded-full border border-[#0b0f14] px-4 py-2 text-sm font-semibold text-[#0b0f14] transition hover:bg-[#0b0f14] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isUploadingAvatar ? "Đang upload..." : "Upload ảnh"}
+            </button>
+          </div>
+        </div>
+
+        {avatarStatus ? (
+          <p
+            className={`mt-3 text-sm ${
+              avatarStatus.type === "success"
+                ? "text-[#166534]"
+                : avatarStatus.type === "info"
+                  ? "text-[#1d4ed8]"
+                  : "text-[#be123c]"
+            }`}
+            aria-live="polite"
+          >
+            {avatarStatus.message}
+          </p>
+        ) : null}
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block space-y-2 text-sm font-medium">
           Tên hiển thị
@@ -74,17 +256,6 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
           />
         </label>
       </div>
-
-      <label className="block space-y-2 text-sm font-medium">
-        Ảnh đại diện URL
-        <input
-          value={form.avatarUrl}
-          onChange={(event) =>
-            setForm((prev) => ({ ...prev, avatarUrl: event.target.value }))
-          }
-          className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm focus:border-[#0b0f14] focus:outline-none"
-        />
-      </label>
 
       <div className="grid gap-4 md:grid-cols-3">
         <label className="block space-y-2 text-sm font-medium">

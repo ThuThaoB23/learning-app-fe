@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppLogo from "@/components/app-logo";
+import AuthSessionGuard from "@/components/auth-session-guard";
 import UserMenu from "@/components/user-menu";
 import { getCurrentUser } from "@/lib/auth";
 import UserNav from "./_components/user-nav";
@@ -36,6 +37,7 @@ export default async function UserLayout({
 
   return (
     <div className="min-h-screen bg-[#f7f4ef] text-[#0b0f14]">
+      <AuthSessionGuard />
       <div className="relative flex min-h-screen w-full">
         <aside className="hidden w-72 flex-col gap-8 border-r border-black/5 bg-white/80 px-6 py-8 backdrop-blur lg:flex">
           <div className="flex items-center justify-between">
@@ -54,12 +56,26 @@ export default async function UserLayout({
           </div>
 
           <div className="rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
-              Xin chào
-            </p>
-            <p className="mt-3 line-clamp-1 text-2xl font-semibold">
-              {user.displayName || user.email}
-            </p>
+            <div className="flex items-center gap-3">
+              {user.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.avatarUrl}
+                  alt={user.displayName || user.email}
+                  className="h-12 w-12 rounded-full border border-[#dbe3ec] object-cover"
+                />
+              ) : (
+                <AppLogo size={40} />
+              )}
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
+                  Xin chào
+                </p>
+                <p className="mt-1 line-clamp-1 text-lg font-semibold">
+                  {user.displayName || user.email}
+                </p>
+              </div>
+            </div>
             <p className="text-sm text-[#64748b]">Sẵn sàng học mỗi ngày.</p>
             <div className="mt-4 h-2 rounded-full bg-black/5">
               <div className="h-2 w-3/5 rounded-full bg-[#34d399]" />
@@ -103,7 +119,11 @@ export default async function UserLayout({
               >
                 Bắt đầu học
               </Link>
-              <UserMenu displayName={user.displayName} />
+              <UserMenu
+                displayName={user.displayName}
+                email={user.email}
+                avatarUrl={user.avatarUrl}
+              />
             </div>
           </header>
 

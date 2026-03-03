@@ -84,6 +84,24 @@ Fields:
 
 ---
 
+## VocabularyAudio (`vocabulary_audios`)
+**Entity:** `com.learnapp.entities.VocabularyAudio`
+
+Fields:
+- `id` (UUID)
+- `vocabularyId` (UUID)
+- `audioUrl` (String)
+- `accent` (String, nullable)
+- `position` (Integer, nullable)
+- `createdAt` (LocalDateTime)
+- `updatedAt` (LocalDateTime)
+
+Purpose:
+- Lưu nhiều audio phát âm cho một vocabulary
+- Dữ liệu hiện được tự động fetch từ `dictionaryapi.dev` cho vocabulary tiếng Anh
+
+---
+
 ## TopicVocabulary (`topic_vocabularies`)
 **Entity:** `com.learnapp.entities.TopicVocabulary`
 
@@ -166,3 +184,14 @@ Fields:
 Enums:
 - `QuestionType`: `MULTIPLE_CHOICE`, `TRUE_FALSE`, `FILL_MISSING_CHARS`, `TRANSLATE_TO_VI`, `TRANSLATE_TO_EN`, `ACTIVE_RECALL_FULL_WORD`, `CONTEXT_GAP`
 - `TestItemStatus`: `PENDING`, `CORRECT`, `WRONG`, `SKIPPED`
+
+---
+
+## Related Non-Entity Objects Added
+
+Các object sau không phải JPA entity nhưng vừa được thêm để hỗ trợ audio:
+
+- `com.learnapp.dto.VocabularyAudioResponse`
+- `com.learnapp.dto.VocabularyAudioBackfillResponse`
+- `com.learnapp.service.VocabularyAudioService`
+- `com.learnapp.config.DictionaryApiProperties`

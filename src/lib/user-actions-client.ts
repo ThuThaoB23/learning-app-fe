@@ -9,7 +9,7 @@ const API_BASE_URL =
 
 type MutationResult<T = unknown> =
   | { ok: true; data: T | null }
-  | { ok: false; message: string };
+  | { ok: false; message: string; errorCode?: string };
 type QueryResult<T = unknown> =
   | { ok: true; data: T }
   | { ok: false; message: string };
@@ -59,13 +59,14 @@ const parseMutationResponse = async <T>(
   }
 
   const data = (await response.json().catch(() => null)) as
-    | (T & { message?: string; error?: string })
+    | (T & { message?: string; error?: string; errorCode?: string })
     | null;
 
   if (!response.ok) {
     return {
       ok: false,
       message: data?.message ?? data?.error ?? fallbackMessage,
+      errorCode: data?.errorCode,
     };
   }
 
@@ -118,6 +119,35 @@ export const updateMe = async <TResponse = Record<string, unknown>>(
   };
 
   return request<TResponse>("/me", "PATCH", "Không thể cập nhật hồ sơ.", payload);
+};
+
+export const updateMyAvatar = async <TResponse = Record<string, unknown>>(
+  file: File,
+) => {
+  const authHeader = getAuthHeader();
+  if (!authHeader) {
+    return { ok: false as const, message: UNAUTHORIZED_MESSAGE };
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/me/avatar`, {
+      method: "PATCH",
+      headers: {
+        Authorization: authHeader,
+      },
+      body: formData,
+    });
+
+    return await parseMutationResponse<TResponse>(
+      response,
+      "Không thể cập nhật ảnh đại diện.",
+    );
+  } catch {
+    return { ok: false as const, message: NETWORK_ERROR_MESSAGE };
+  }
 };
 
 export const addToMyVocab = async <TResponse = Record<string, unknown>>(

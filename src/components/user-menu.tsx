@@ -8,11 +8,15 @@ import LogoutButton from "@/components/logout-button";
 type UserMenuProps = {
   variant?: "admin" | "user";
   displayName?: string | null;
+  email?: string | null;
+  avatarUrl?: string | null;
 };
 
 export default function UserMenu({
   variant = "user",
   displayName,
+  email,
+  avatarUrl,
 }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -48,6 +52,7 @@ export default function UserMenu({
 
   const mutedText = isAdmin ? "text-[#64748b]" : "text-[#64748b]";
   const name = displayName?.trim() || "Người dùng";
+  const emailText = email?.trim();
 
   return (
     <div ref={wrapperRef} className="relative">
@@ -60,7 +65,16 @@ export default function UserMenu({
       >
         <span className="sr-only">Mở menu người dùng</span>
         <div className="grid h-full w-full place-items-center">
-          <AppLogo size={28} className="rounded-full border-0 bg-transparent" />
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatarUrl}
+              alt={name}
+              className="h-10 w-10 rounded-full object-cover"
+            />
+          ) : (
+            <AppLogo size={28} className="rounded-full border-0 bg-transparent" />
+          )}
         </div>
       </button>
 
@@ -70,7 +84,24 @@ export default function UserMenu({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
               Tài khoản
             </p>
-            <p className={`mt-1 text-sm font-medium ${mutedText}`}>{name}</p>
+            <div className="mt-2 flex items-center gap-3">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarUrl}
+                  alt={name}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <AppLogo size={22} className="rounded-full border-0 bg-transparent" />
+              )}
+              <div className="min-w-0">
+                <p className={`truncate text-sm font-medium ${mutedText}`}>{name}</p>
+                {emailText ? (
+                  <p className="truncate text-xs text-[#64748b]">{emailText}</p>
+                ) : null}
+              </div>
+            </div>
           </div>
           <div className="px-2 pb-2">
             <Link href="/dashboard/settings" className={itemClasses}>

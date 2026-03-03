@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { clearAuthSession } from "@/lib/client-auth";
 
 type LogoutButtonProps = {
   className?: string;
@@ -14,10 +15,7 @@ export default function LogoutButton({
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("tokenType");
-    document.cookie = "accessToken=; path=/; max-age=0; samesite=lax";
-    document.cookie = "tokenType=; path=/; max-age=0; samesite=lax";
+    clearAuthSession();
     router.replace("/login");
     router.refresh();
   };

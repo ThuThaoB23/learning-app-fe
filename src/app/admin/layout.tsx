@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppLogo from "@/components/app-logo";
+import AuthSessionGuard from "@/components/auth-session-guard";
 import UserMenu from "@/components/user-menu";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -41,6 +42,7 @@ export default async function AdminLayout({
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0b0f14] text-[#e7edf3]">
+      <AuthSessionGuard />
       <div className="pointer-events-none absolute -top-48 left-[-20%] h-[420px] w-[420px] rounded-full bg-[radial-gradient(circle_at_center,_#1d4ed8,_transparent_70%)] opacity-40" />
       <div className="pointer-events-none absolute -bottom-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,_#fbbf24,_transparent_70%)] opacity-30" />
 
@@ -127,7 +129,12 @@ export default async function AdminLayout({
               >
                 Xuất báo cáo
               </button>
-              <UserMenu variant="admin" displayName={user.displayName} />
+              <UserMenu
+                variant="admin"
+                displayName={user.displayName}
+                email={user.email}
+                avatarUrl={user.avatarUrl}
+              />
             </div>
           </header>
 

@@ -14,6 +14,7 @@ export type VocabularyResponse = {
   definition?: string | null;
   definitionVi?: string | null;
   examples?: Array<string | VocabularyExample> | null;
+  audios?: VocabularyAudioResponse[] | null;
   topicIds?: string[] | null;
   phonetic?: string | null;
   partOfSpeech?: string | null;
@@ -28,6 +29,13 @@ export type VocabularyResponse = {
 export type VocabularyExample = {
   id?: string | null;
   value: string;
+};
+
+export type VocabularyAudioResponse = {
+  id: string;
+  audioUrl: string;
+  accent?: string | null;
+  position?: number | null;
 };
 
 export type PageResponse<T> = {
@@ -89,6 +97,35 @@ export async function fetchVocab(
     }
 
     return (await response.json()) as PageResponse<VocabularyResponse>;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchVocabDetailById(
+  id: string,
+): Promise<VocabularyResponse | null> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const tokenType = cookieStore.get("tokenType")?.value ?? "Bearer";
+
+  if (!accessToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/vocab/${id}`, {
+      headers: {
+        Authorization: `${decodeURIComponent(tokenType)} ${decodeURIComponent(accessToken)}`,
+      },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as VocabularyResponse;
   } catch {
     return null;
   }

@@ -10,7 +10,9 @@ import VocabFilterPanel from "./_components/vocab-filter-panel";
 import VocabActions from "./_components/vocab-actions";
 import CreateVocabModal from "./_components/create-vocab-modal";
 import ImportVocabCsvModal from "./_components/import-vocab-csv-modal";
+import VocabAudioBackfillModal from "./_components/vocab-audio-backfill-modal";
 import VocabExportButton from "./_components/vocab-export-button";
+import VocabSoundCell from "./_components/vocab-sound-cell";
 
 export const metadata: Metadata = {
   title: "Từ vựng",
@@ -159,6 +161,7 @@ export default async function AdminVocabPage({
         </div>
         <div className="flex flex-wrap gap-3">
           <VocabExportButton />
+          <VocabAudioBackfillModal />
           <ImportVocabCsvModal />
           <CreateVocabModal topics={topics} />
         </div>
@@ -179,12 +182,13 @@ export default async function AdminVocabPage({
         </div>
 
         <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
-          <div className="min-w-[1300px]">
-            <div className="grid grid-cols-[minmax(0,_1.3fr)_minmax(0,_2fr)_minmax(0,_1.7fr)_120px_160px_220px_96px] items-center gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
+          <div className="min-w-[1520px]">
+            <div className="grid grid-cols-[minmax(0,_1.2fr)_minmax(0,_1.8fr)_minmax(0,_1.5fr)_110px_240px_150px_210px_96px] items-center gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
               <span>Từ vựng</span>
               <span>Định nghĩa</span>
               <span>Định nghĩa VN</span>
               <span>Ngôn ngữ</span>
+              <span>Sound</span>
               <span className="text-center">Trạng thái</span>
               <span>Ngày tạo</span>
               <span className="text-center">Thao tác</span>
@@ -200,7 +204,7 @@ export default async function AdminVocabPage({
                   return (
                     <div
                       key={item.id}
-                      className="grid grid-cols-[minmax(0,_1.3fr)_minmax(0,_2fr)_minmax(0,_1.7fr)_120px_160px_220px_96px] items-center gap-4 px-4 py-4 text-sm text-[#e7edf3]"
+                      className="grid grid-cols-[minmax(0,_1.2fr)_minmax(0,_1.8fr)_minmax(0,_1.5fr)_110px_240px_150px_210px_96px] items-center gap-4 px-4 py-4 text-sm text-[#e7edf3]"
                     >
                       <div className="min-w-0">
                         <p className="truncate font-semibold">
@@ -220,6 +224,12 @@ export default async function AdminVocabPage({
                       <p className="text-sm uppercase text-[#94a3b8]">
                         {item.language ?? "—"}
                       </p>
+                      <VocabSoundCell
+                        key={`${item.id}-${item.updatedAt ?? "na"}-${item.audios?.length ?? 0}`}
+                        vocabId={item.id}
+                        language={item.language}
+                        initialAudios={item.audios}
+                      />
                       <div className="flex justify-center">
                         <span
                           className={`${pillBase} ${statusMeta.className}`}

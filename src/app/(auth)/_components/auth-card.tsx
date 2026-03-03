@@ -20,6 +20,7 @@ const API_BASE_URL =
     : process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
 const initialForm = {
+  identifier: "",
   email: "",
   password: "",
   displayName: "",
@@ -39,13 +40,21 @@ export default function AuthCard({ mode }: AuthCardProps) {
   const heading = isRegister ? "Tạo tài khoản mới" : "Chào mừng quay lại";
   const subheading = isRegister
     ? "Bắt đầu hành trình học từ vựng với mục tiêu rõ ràng."
-    : "Đăng nhập để tiếp tục lộ trình học và theo dõi tiến độ.";
+    : "Đăng nhập bằng email hoặc username để tiếp tục lộ trình học.";
   const helperTitle = isRegister ? "Đăng ký" : "Đăng nhập";
   const helperAction = isRegister ? "Tạo tài khoản" : "Đăng nhập";
   const helperSwitchTo = isRegister ? "Đăng nhập" : "Đăng ký";
   const helperSwitchHint = isRegister
     ? "Đã có tài khoản?"
     : "Chưa có tài khoản?";
+  const identifierLabel = isRegister ? "Email" : "Email hoặc username";
+  const identifierName = isRegister ? "email" : "identifier";
+  const identifierType = isRegister ? "email" : "text";
+  const identifierValue = isRegister ? form.email : form.identifier;
+  const identifierAutocomplete = isRegister ? "email" : "username";
+  const identifierPlaceholder = isRegister
+    ? "user@example.com"
+    : "Nhập email hoặc username";
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
@@ -65,7 +74,7 @@ export default function AuthCard({ mode }: AuthCardProps) {
           displayName: form.displayName.trim(),
         }
       : {
-          email: form.email.trim(),
+          identifier: form.identifier.trim(),
           password: form.password,
         };
 
@@ -114,7 +123,7 @@ export default function AuthCard({ mode }: AuthCardProps) {
           router.replace("/dashboard");
         }
       }
-    } catch (error) {
+    } catch {
       setStatus({
         type: "error",
         message: "Không thể kết nối máy chủ. Vui lòng kiểm tra lại.",
@@ -175,17 +184,22 @@ export default function AuthCard({ mode }: AuthCardProps) {
         ) : null}
 
         <label className="block space-y-2 text-sm font-medium">
-          Email
+          {identifierLabel}
           <input
-            name="email"
-            type="email"
-            value={form.email}
+            name={identifierName}
+            type={identifierType}
+            value={identifierValue}
             onChange={handleChange}
             required
-            autoComplete="email"
+            autoComplete={identifierAutocomplete}
             className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm focus:border-[#0b0f14] focus:outline-none focus:ring-2 focus:ring-[#0b0f14]/20"
-            placeholder="user@example.com"
+            placeholder={identifierPlaceholder}
           />
+          {!isRegister ? (
+            <p className="text-xs font-normal text-[#64748b]">
+              Bạn có thể dùng email hoặc username đã đăng ký.
+            </p>
+          ) : null}
         </label>
 
         <label className="block space-y-2 text-sm font-medium">

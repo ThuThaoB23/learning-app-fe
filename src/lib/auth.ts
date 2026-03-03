@@ -11,6 +11,7 @@ type CurrentUser = {
   id: string;
   email: string;
   displayName?: string | null;
+  avatarUrl?: string | null;
   role: "USER" | "ADMIN" | string;
   status?: string;
 };
