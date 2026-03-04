@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import AppLogo from "@/components/app-logo";
 import AuthSessionGuard from "@/components/auth-session-guard";
-import UserMenu from "@/components/user-menu";
 import { getCurrentUser } from "@/lib/auth";
+import AdminHeader from "./_components/admin-header";
+import AdminSidebar from "./_components/admin-sidebar";
 
 export const metadata: Metadata = {
   title: {
@@ -47,96 +46,15 @@ export default async function AdminLayout({
       <div className="pointer-events-none absolute -bottom-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle_at_center,_#fbbf24,_transparent_70%)] opacity-30" />
 
       <div className="relative flex min-h-screen w-full">
-        <aside className="hidden w-72 flex-col gap-8 border-r border-white/10 bg-[#0f172a]/90 px-6 py-8 backdrop-blur lg:flex">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AppLogo priority />
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
-                  Admin Console
-                </p>
-                <p className="text-lg font-semibold text-[#e7edf3]">
-                  Learning App
-                </p>
-              </div>
-            </div>
-            <span className="rounded-full border border-[#34d399]/30 bg-[#34d399]/10 px-3 py-1 text-xs font-semibold text-[#34d399]">
-              ACTIVE
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-[#0f172a]/80 p-4 shadow-[0_18px_50px_rgba(6,10,18,0.4)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
-              Hôm nay
-            </p>
-            <p className="mt-3 text-3xl font-semibold text-[#e7edf3]">
-              120
-            </p>
-            <p className="text-sm text-[#64748b]">từ mới được học</p>
-            <div className="mt-4 flex items-center gap-2 text-xs text-[#64748b]">
-              <span className="h-2 w-2 rounded-full bg-[#34d399]" />
-              18 lớp học đang hoạt động
-            </div>
-          </div>
-
-          <nav className="space-y-1 text-sm font-medium text-[#64748b]">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-200 ease-out hover:bg-white/10 hover:text-[#e7edf3]"
-              >
-                <span>{item.label}</span>
-                <span className="text-xs text-[#64748b]">→</span>
-              </Link>
-            ))}
-          </nav>
-
-          <div className="mt-auto rounded-2xl border border-white/10 bg-[#0f172a]/80 p-4 shadow-[0_18px_50px_rgba(6,10,18,0.4)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
-              Support
-            </p>
-            <p className="mt-2 text-sm text-[#e7edf3]">
-              Cần trợ giúp? Liên hệ đội kỹ thuật.
-            </p>
-            <button
-              type="button"
-              className="mt-3 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/20"
-            >
-              Gửi yêu cầu
-            </button>
-          </div>
-        </aside>
+        <AdminSidebar navItems={navItems} />
 
         <div className="flex min-h-screen flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-white/10 bg-[#0b0f14]/85 px-6 py-4 backdrop-blur lg:px-10">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
-                Dashboard
-              </p>
-              <h1 className="text-2xl font-semibold text-[#e7edf3]">
-                Bảng điều khiển
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-[#e7edf3] md:flex">
-                <span className="text-xs text-[#64748b]">⌘ K</span>
-                Tìm kiếm nhanh
-              </div>
-              <button
-                type="button"
-                className="rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/20"
-              >
-                Xuất báo cáo
-              </button>
-              <UserMenu
-                variant="admin"
-                displayName={user.displayName}
-                email={user.email}
-                avatarUrl={user.avatarUrl}
-              />
-            </div>
-          </header>
+          <AdminHeader
+            navItems={navItems}
+            displayName={user.displayName}
+            email={user.email}
+            avatarUrl={user.avatarUrl}
+          />
 
           <main className="flex-1 px-6 py-8 lg:px-10">{children}</main>
         </div>

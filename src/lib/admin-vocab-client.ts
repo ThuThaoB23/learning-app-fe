@@ -53,26 +53,6 @@ export type VocabularyImportResultResponse = {
   errors?: VocabularyImportError[];
 };
 
-export type VocabularyAudioBackfillInput = {
-  language?: string;
-  status?: string;
-  forceRefresh?: boolean;
-  batchSize?: number;
-  limit?: number;
-};
-
-export type VocabularyAudioBackfillResponse = {
-  language: string;
-  status?: string | null;
-  forceRefresh: boolean;
-  batchSize: number;
-  limit?: number | null;
-  processed: number;
-  updated: number;
-  skipped: number;
-  failed: number;
-};
-
 export type VocabularyContributionResponse = {
   id: string;
   term?: string | null;
@@ -268,47 +248,6 @@ export const importVocabCsv = async (
     return await parseMutationResponse<VocabularyImportResultResponse>(
       response,
       "Không thể import file CSV.",
-    );
-  } catch {
-    return { ok: false, message: NETWORK_ERROR_MESSAGE };
-  }
-};
-
-export const backfillVocabAudio = async (
-  input: VocabularyAudioBackfillInput,
-): Promise<MutationResult<VocabularyAudioBackfillResponse>> => {
-  const authHeader = getAuthHeader();
-  if (!authHeader) {
-    return { ok: false, message: UNAUTHORIZED_MESSAGE };
-  }
-
-  const url = new URL(`${API_BASE_URL}/admin/vocab/audio/backfill`);
-  url.searchParams.set("language", (input.language ?? "en").trim() || "en");
-
-  if (input.status?.trim()) {
-    url.searchParams.set("status", input.status.trim());
-  }
-  if (typeof input.forceRefresh === "boolean") {
-    url.searchParams.set("forceRefresh", String(input.forceRefresh));
-  }
-  if (typeof input.batchSize === "number" && Number.isFinite(input.batchSize)) {
-    url.searchParams.set("batchSize", String(input.batchSize));
-  }
-  if (typeof input.limit === "number" && Number.isFinite(input.limit)) {
-    url.searchParams.set("limit", String(input.limit));
-  }
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: authHeader,
-      },
-    });
-
-    return await parseMutationResponse<VocabularyAudioBackfillResponse>(
-      response,
-      "Không thể cập nhật sound cho từ vựng.",
     );
   } catch {
     return { ok: false, message: NETWORK_ERROR_MESSAGE };

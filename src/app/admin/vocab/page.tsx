@@ -10,7 +10,6 @@ import VocabFilterPanel from "./_components/vocab-filter-panel";
 import VocabActions from "./_components/vocab-actions";
 import CreateVocabModal from "./_components/create-vocab-modal";
 import ImportVocabCsvModal from "./_components/import-vocab-csv-modal";
-import VocabAudioBackfillModal from "./_components/vocab-audio-backfill-modal";
 import VocabExportButton from "./_components/vocab-export-button";
 import VocabSoundCell from "./_components/vocab-sound-cell";
 
@@ -161,7 +160,6 @@ export default async function AdminVocabPage({
         </div>
         <div className="flex flex-wrap gap-3">
           <VocabExportButton />
-          <VocabAudioBackfillModal />
           <ImportVocabCsvModal />
           <CreateVocabModal topics={topics} />
         </div>
