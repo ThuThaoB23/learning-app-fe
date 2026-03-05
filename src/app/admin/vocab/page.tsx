@@ -179,7 +179,62 @@ export default async function AdminVocabPage({
           <RefreshButton className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/15 disabled:opacity-60" />
         </div>
 
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+        <div className="mt-6 space-y-3 md:hidden">
+          {items.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 px-4 py-6 text-sm text-[#64748b]">
+              Chưa có dữ liệu từ vựng.
+            </div>
+          ) : (
+            items.map((item) => {
+              const statusMeta = getStatusMeta(item.status);
+              return (
+                <article
+                  key={item.id}
+                  className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 p-4 text-sm text-[#e7edf3]"
+                >
+                  <p className="truncate font-semibold">{getTitle(item)}</p>
+                  <p className="mt-1 truncate text-xs text-[#64748b]">
+                    {item.phonetic || "—"} {item.partOfSpeech ? `• ${item.partOfSpeech}` : ""}
+                  </p>
+                  <p className="mt-2 text-sm text-[#94a3b8]">{formatDefinition(item)}</p>
+                  <p className="mt-1 text-sm text-[#94a3b8]">{item.definitionVi?.trim() || "—"}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="text-xs uppercase text-[#94a3b8]">{item.language ?? "—"}</span>
+                    <span className={`${pillBase} ${statusMeta.className}`}>{statusMeta.label}</span>
+                  </div>
+                  <div className="mt-3">
+                    <VocabSoundCell
+                      key={`${item.id}-${item.updatedAt ?? "na"}-${item.audios?.length ?? 0}-mobile`}
+                      vocabId={item.id}
+                      language={item.language}
+                      initialAudios={item.audios}
+                    />
+                  </div>
+                  <p className="mt-3 text-xs text-[#94a3b8]">
+                    {item.createdAt
+                      ? new Intl.DateTimeFormat("vi-VN", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(item.createdAt))
+                      : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-[#64748b]">
+                    {item.updatedAt
+                      ? `Cập nhật: ${new Intl.DateTimeFormat("vi-VN", {
+                          dateStyle: "medium",
+                        }).format(new Date(item.updatedAt))}`
+                      : "Chưa cập nhật"}
+                  </p>
+                  <div className="mt-3">
+                    <VocabActions vocab={item} topics={topics} />
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
+
+        <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
           <div className="min-w-[1520px]">
             <div className="grid grid-cols-[minmax(0,_1.2fr)_minmax(0,_1.8fr)_minmax(0,_1.5fr)_110px_240px_150px_210px_96px] items-center gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
               <span>Từ vựng</span>
@@ -229,9 +284,7 @@ export default async function AdminVocabPage({
                         initialAudios={item.audios}
                       />
                       <div className="flex justify-center">
-                        <span
-                          className={`${pillBase} ${statusMeta.className}`}
-                        >
+                        <span className={`${pillBase} ${statusMeta.className}`}>
                           {statusMeta.label}
                         </span>
                       </div>

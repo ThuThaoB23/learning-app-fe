@@ -20,12 +20,9 @@ export default async function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-        <h2 className="text-2xl font-semibold">Thông tin tài khoản</h2>
-        <p className="mt-1 text-sm text-[#64748b]">
-          Endpoint dùng: `GET /me`, `PATCH /me` và `PATCH /me/avatar`.
-        </p>
-        <div className="mt-5">
+      <section className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+        <h2 className="text-2xl font-semibold">Tài khoản</h2>
+        <div className="mt-4">
           <UpdateProfileForm profile={profile} />
         </div>
       </section>

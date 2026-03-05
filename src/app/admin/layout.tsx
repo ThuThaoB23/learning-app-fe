@@ -48,7 +48,7 @@ export default async function AdminLayout({
       <div className="relative flex min-h-screen w-full">
         <AdminSidebar navItems={navItems} />
 
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <AdminHeader
             navItems={navItems}
             displayName={user.displayName}
@@ -56,7 +56,7 @@ export default async function AdminLayout({
             avatarUrl={user.avatarUrl}
           />
 
-          <main className="flex-1 px-6 py-8 lg:px-10">{children}</main>
+          <main className="min-w-0 flex-1 px-4 pb-6 pt-28 sm:px-6 sm:pb-8 sm:pt-32 lg:px-10 lg:py-8">{children}</main>
         </div>
       </div>
     </div>

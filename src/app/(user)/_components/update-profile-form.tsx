@@ -176,24 +176,18 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
   };
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-5" onSubmit={handleSubmit}>
       <div className="rounded-2xl border border-[#e5e7eb] bg-[#f8fafc] p-4">
-        <p className="text-sm font-semibold text-[#0f172a]">Ảnh đại diện</p>
-        <p className="mt-1 text-xs text-[#64748b]">
-          Dùng endpoint `PATCH /me/avatar` (multipart/form-data, field `file`).
-          Hỗ trợ JPG, PNG, WEBP, GIF tối đa 5MB.
-        </p>
-
-        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           {previewAvatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewAvatar}
               alt="Avatar preview"
-              className="h-24 w-24 rounded-full border border-[#cbd5e1] object-cover"
+              className="h-20 w-20 rounded-full border border-[#cbd5e1] object-cover"
             />
           ) : (
-            <div className="flex h-24 w-24 items-center justify-center rounded-full border border-dashed border-[#cbd5e1] bg-white text-xs text-[#64748b]">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-[#cbd5e1] bg-white text-xs text-[#64748b]">
               Chưa có ảnh
             </div>
           )}
@@ -204,17 +198,29 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
               onChange={handleAvatarFileChange}
-              className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-[#0b0f14] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-[#111827]"
+              className="sr-only"
             />
-
-            <button
-              type="button"
-              onClick={handleAvatarUpload}
-              disabled={isUploadingAvatar || !selectedAvatar}
-              className="rounded-full border border-[#0b0f14] px-4 py-2 text-sm font-semibold text-[#0b0f14] transition hover:bg-[#0b0f14] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isUploadingAvatar ? "Đang upload..." : "Upload ảnh"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="rounded-full border border-[#0b0f14] px-3 py-1.5 text-xs font-semibold text-[#0b0f14] transition hover:bg-[#0b0f14] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Chọn ảnh
+              </button>
+              <button
+                type="button"
+                onClick={handleAvatarUpload}
+                disabled={isUploadingAvatar || !selectedAvatar}
+                className="rounded-full bg-[#0b0f14] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#111827] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUploadingAvatar ? "Đang tải..." : "Cập nhật ảnh"}
+              </button>
+              <span className="text-xs text-[#64748b]">
+                {selectedAvatar?.name || "JPG/PNG/WEBP/GIF • tối đa 5MB"}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -242,6 +248,7 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
             onChange={(event) =>
               setForm((prev) => ({ ...prev, displayName: event.target.value }))
             }
+            placeholder="Tên bạn muốn hiển thị"
             className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm focus:border-[#0b0f14] focus:outline-none"
           />
         </label>
@@ -252,13 +259,29 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
             onChange={(event) =>
               setForm((prev) => ({ ...prev, username: event.target.value }))
             }
+            placeholder="username"
             className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm focus:border-[#0b0f14] focus:outline-none"
           />
         </label>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <label className="block space-y-2 text-sm font-medium">
+      <div className="grid gap-4 md:grid-cols-4">
+        <label className="block space-y-2 text-sm font-medium md:col-span-1">
+          Mục tiêu/ngày (phút)
+          <input
+            type="number"
+            min={0}
+            value={form.dailyGoal}
+            onChange={(event) =>
+              setForm((prev) => ({
+                ...prev,
+                dailyGoal: Math.max(0, Number(event.target.value) || 0),
+              }))
+            }
+            className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm focus:border-[#0b0f14] focus:outline-none"
+          />
+        </label>
+        <label className="block space-y-2 text-sm font-medium md:col-span-1">
           Locale
           <input
             value={form.locale}
@@ -280,21 +303,54 @@ export default function UpdateProfileForm({ profile }: UpdateProfileFormProps) {
         </label>
       </div>
 
-      <label className="block max-w-48 space-y-2 text-sm font-medium">
-        Mục tiêu hằng ngày (phút)
-        <input
-          type="number"
-          min={1}
-          value={form.dailyGoal}
-          onChange={(event) =>
-            setForm((prev) => ({
-              ...prev,
-              dailyGoal: Math.max(1, Number(event.target.value) || 1),
-            }))
-          }
-          className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm focus:border-[#0b0f14] focus:outline-none"
-        />
-      </label>
+      <div className="rounded-2xl border border-[#e5e7eb] bg-[#f8fafc] p-4">
+        <p className="text-sm font-semibold text-[#0f172a]">Thông tin chỉ xem</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          <label className="block space-y-1.5 text-sm">
+            <span className="text-xs text-[#64748b]">Email</span>
+            <input
+              readOnly
+              disabled
+              value={profile.email ?? ""}
+              className="w-full rounded-xl border border-[#e5e7eb] bg-[#f1f5f9] px-3 py-2 text-sm text-[#475569]"
+            />
+          </label>
+          <label className="block space-y-1.5 text-sm md:col-span-1">
+            <span className="text-xs text-[#64748b]">Vai trò</span>
+            <input
+              readOnly
+              disabled
+              value={profile.role ?? ""}
+              className="w-full rounded-xl border border-[#e5e7eb] bg-[#f1f5f9] px-3 py-2 text-sm text-[#475569]"
+            />
+          </label>
+          <label className="block space-y-1.5 text-sm md:col-span-1">
+            <span className="text-xs text-[#64748b]">Trạng thái</span>
+            <input
+              readOnly
+              disabled
+              value={profile.status ?? ""}
+              className="w-full rounded-xl border border-[#e5e7eb] bg-[#f1f5f9] px-3 py-2 text-sm text-[#475569]"
+            />
+          </label>
+        </div>
+        <details className="mt-3 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2">
+          <summary className="cursor-pointer text-xs font-medium text-[#64748b]">
+            Preferences
+          </summary>
+          <textarea
+            readOnly
+            disabled
+            rows={4}
+            value={
+              profile.preferences
+                ? JSON.stringify(profile.preferences, null, 2)
+                : ""
+            }
+            className="mt-2 w-full rounded-xl border border-[#e5e7eb] bg-[#f1f5f9] px-3 py-2 font-mono text-xs text-[#475569]"
+          />
+        </details>
+      </div>
 
       {status ? (
         <p

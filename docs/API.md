@@ -673,6 +673,25 @@ Create daily session (or return active daily session for today).
 Response `200` (`TestSessionResponse`)
 Note: Response có `items[]`. Mỗi item có field `expected`, nhưng item `PENDING` trong session `ACTIVE` sẽ trả `expected = null`.
 
+### `POST /me/sessions/topic` (Auth)
+Create a topic-based practice session from one or more topics.
+
+Body (`CreateTopicSessionRequest`):
+```json
+{
+  "topicIds": [
+    "7fffd9da-b2bb-4f7a-8f95-ec9827ede9e9",
+    "d872b2ee-31c1-4f5d-a7ab-77f32f2dff4a"
+  ],
+  "totalItems": 30
+}
+```
+
+Response `200` (`TestSessionResponse`)
+Note:
+- `totalItems` optional, mặc định `20` nếu không gửi.
+- Nếu `totalItems` lớn hơn số từ vựng người dùng có trong các topic đã chọn thì hệ thống lấy tất cả.
+
 ### `GET /me/sessions/{sessionId}` (Auth)
 Get test session detail with ordered items.
 
@@ -691,6 +710,30 @@ Body (`SubmitTestItemAnswerRequest`):
 ```
 
 Response `200` (`SubmitTestItemAnswerResponse`)
+
+### `POST /me/sessions/{sessionId}/answers` (Auth)
+Submit answers for all `PENDING` items in one request.
+
+Body (`SubmitTestSessionAnswersRequest`):
+```json
+{
+  "answers": [
+    {
+      "itemId": "c9ec91ff-860f-483a-a7fd-56f8f5e9c21a",
+      "answer": "apple",
+      "timeMs": 3200
+    },
+    {
+      "itemId": "da7a7a4c-5414-4d93-954f-06f8de001eb5",
+      "answer": "banana",
+      "timeMs": 2800
+    }
+  ]
+}
+```
+
+Response `200` (`SubmitTestSessionAnswersResponse`)
+Note: Request phải có đáp án cho toàn bộ item `PENDING` trong session, không được trùng `itemId`.
 
 ### `POST /me/sessions/{sessionId}/complete` (Auth)
 Mark active session as completed.
@@ -785,7 +828,7 @@ Response `200` (`VocabularyResponse`)
 Notes:
 - Chỉ hỗ trợ vocabulary có `language = en`.
 - Nếu API ngoài đang cooldown hoặc lỗi tạm thời, response vẫn trả về vocabulary hiện tại và giữ nguyên audio cũ đã có.
-- Khi refresh thành công, audio mới sẽ được tải từ `dictionaryapi.dev`, upload lên MinIO của hệ thống, rồi `audioUrl` trả về sẽ là URL MinIO.
+- Khi refresh thành công, audio mới sẽ được sinh từ TTS server `POST /tts`, upload lên MinIO của hệ thống, rồi `audioUrl` trả về sẽ là URL MinIO.
 
 ### `DELETE /admin/vocab/{id}/audio/{audioId}`
 Xoá một audio cụ thể khỏi vocabulary.
@@ -844,7 +887,7 @@ curl -X POST "http://localhost:8080/admin/vocab/import" \
 ```
 
 Notes:
-- Với vocabulary `language = en`, hệ thống sẽ tự fetch audio từ `https://api.dictionaryapi.dev/api/v2/entries/en/<word>`, tải file về, upload lên MinIO, rồi lưu URL MinIO vào `audios` sau khi import thành công.
+- Với vocabulary `language = en`, hệ thống sẽ tự gọi TTS server `POST /tts` với body `{"text":"<word>"}`, nhận file WAV, upload lên MinIO, rồi lưu URL MinIO vào `audios` sau khi import thành công.
 
 ### `POST /admin/vocab/audio/backfill`
 Backfill audio cho vocabulary cũ theo batch.
@@ -861,7 +904,7 @@ Behavior:
 - `forceRefresh=true`: quét lại cả vocab đã có audio và thay thế audio hiện tại nếu fetch thành công.
 - Hiện tại chỉ hỗ trợ `language=en`.
 - Nếu API ngoài lỗi tạm thời, hệ thống không xóa audio cũ đã có.
-- Khi fetch thành công, hệ thống upload audio lên MinIO và lưu URL MinIO vào DB thay vì giữ URL gốc từ nguồn ngoài.
+- Khi tạo audio thành công, hệ thống upload audio lên MinIO và lưu URL MinIO vào DB.
 
 Response `200` (`VocabularyAudioBackfillResponse`)
 

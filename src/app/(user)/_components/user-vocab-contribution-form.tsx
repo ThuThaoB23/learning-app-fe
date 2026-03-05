@@ -272,7 +272,7 @@ export default function UserVocabContributionForm({
   };
 
   return (
-    <section className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+    <section className="rounded-3xl border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold text-[#0b0f14]">Thêm từ vựng mới</h2>
@@ -451,17 +451,17 @@ export default function UserVocabContributionForm({
           </div>
           <div className="space-y-2 rounded-2xl border border-[#e5e7eb] bg-[#f8fafc] p-3">
             {form.examples.map((example, index) => (
-              <div key={`example-${index}`} className="flex gap-2">
+              <div key={`example-${index}`} className="flex flex-col gap-2 sm:flex-row">
                 <input
                   value={example}
                   onChange={(event) => updateExample(index, event.target.value)}
                   placeholder={`Ví dụ ${index + 1}`}
-                  className="w-full rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#0b0f14] focus:border-[#0b0f14] focus:outline-none"
+                  className="w-full min-w-0 rounded-xl border border-[#e5e7eb] bg-white px-4 py-3 text-sm text-[#0b0f14] focus:border-[#0b0f14] focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => removeExample(index)}
-                  className="rounded-xl border border-[#e5e7eb] px-3 py-2 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]"
+                  className="rounded-xl border border-[#e5e7eb] px-3 py-2 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14] sm:shrink-0"
                   aria-label={`Xóa ví dụ ${index + 1}`}
                 >
                   Xóa

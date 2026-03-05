@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSessionHistoryIds } from "@/lib/session-history";
 import { fetchSessionDetailClient } from "@/lib/user-actions-client";
-import { extractSessionScore, formatSessionScore } from "@/lib/session-score";
 
 type SessionView = {
   id: string;
@@ -12,7 +11,6 @@ type SessionView = {
   type?: string | null;
   startedAt?: string | null;
   itemsCount: number;
-  scoreSummary?: string | null;
 };
 
 const toSessionView = (data: Record<string, unknown>): SessionView => ({
@@ -21,8 +19,18 @@ const toSessionView = (data: Record<string, unknown>): SessionView => ({
   type: typeof data.type === "string" ? data.type : null,
   startedAt: typeof data.startedAt === "string" ? data.startedAt : null,
   itemsCount: Array.isArray(data.items) ? data.items.length : 0,
-  scoreSummary: formatSessionScore(extractSessionScore(data)),
 });
+
+const toStatusLabel = (value?: string | null) => {
+  const normalized = (value || "ACTIVE").toUpperCase();
+  if (normalized === "COMPLETED") {
+    return "Đã nộp";
+  }
+  if (normalized === "ABANDONED") {
+    return "Đã hủy";
+  }
+  return "Đang làm";
+};
 
 export default function RecentSessionsList() {
   const [loading, setLoading] = useState(true);
@@ -63,10 +71,7 @@ export default function RecentSessionsList() {
 
   return (
     <section className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-      <h3 className="text-lg font-semibold">Phiên gần đây của bạn</h3>
-      <p className="mt-1 text-sm text-[#64748b]">
-        Danh sách phiên đã tạo/mở trên thiết bị này.
-      </p>
+      <h3 className="text-lg font-semibold">Phiên gần đây</h3>
 
       <div className="mt-4 space-y-2">
         {loading ? (
@@ -82,7 +87,7 @@ export default function RecentSessionsList() {
             >
               <div>
                 <p className="text-sm font-semibold text-[#0b0f14]">
-                  {session.type || "DAILY"} • {session.status || "ACTIVE"}
+                  {session.type || "DAILY"} • {toStatusLabel(session.status)}
                 </p>
                 <p className="text-xs text-[#64748b]">
                   {session.startedAt
@@ -92,13 +97,9 @@ export default function RecentSessionsList() {
                       }).format(new Date(session.startedAt))
                     : "Chưa bắt đầu"}
                 </p>
-                {session.scoreSummary ? (
-                  <p className="text-xs font-medium text-[#166534]">{session.scoreSummary}</p>
-                ) : null}
               </div>
-              <div className="text-right text-xs text-[#64748b]">
-                <p>{session.itemsCount} câu hỏi</p>
-                <p className="truncate">{session.id.slice(0, 8)}...</p>
+              <div className="rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-2.5 py-1 text-xs text-[#475569]">
+                {session.itemsCount} câu
               </div>
             </Link>
           ))

@@ -176,12 +176,12 @@ export default function AdminSidebar({ navItems }: { navItems: AdminNavItem[] })
               href={item.href}
               aria-current={activeHref === item.href ? "page" : undefined}
               title={collapsed ? item.label : undefined}
-              className={`group flex h-11 items-center rounded-xl transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a1120] ${
+              className={`group flex h-11 items-center rounded-xl border border-transparent transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#38bdf8] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a1120] ${
                 collapsed ? "justify-center px-2" : "gap-3 px-4"
               } ${
                 activeHref === item.href
-                  ? "bg-[#17314e] text-[#f8fafc]"
-                  : "text-[#9fb1c6] hover:bg-[#1a2e47] hover:text-[#f1f5f9]"
+                  ? "border-[#264a70]/40 bg-[#17314e] text-[#f8fafc]"
+                  : "text-[#b1c1d4] hover:border-[#294463]/35 hover:bg-[#1a2f49] hover:text-[#f8fafc]"
               }`}
             >
               <span>{getNavIcon(item.href)}</span>

@@ -121,7 +121,42 @@ export default async function AdminTopicsPage({
           <RefreshButton className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/15 disabled:opacity-60" />
         </div>
 
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+          <div className="mt-6 space-y-3 md:hidden">
+            {topics.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 px-4 py-6 text-sm text-[#64748b]">
+                Chưa có dữ liệu chủ đề.
+              </div>
+            ) : (
+              topics.map((topic) => (
+                <article
+                  key={topic.id}
+                  className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 p-4 text-sm text-[#e7edf3]"
+                >
+                  <p className="font-semibold">{getTopicTitle(topic)}</p>
+                  <p className="mt-1 text-xs text-[#64748b]">{topic.name || topic.title || "—"}</p>
+                  <p className="mt-2 text-sm text-[#94a3b8]">{topic.description ?? "—"}</p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <span className="inline-flex items-center justify-center whitespace-nowrap rounded-full border border-[#3b82f6]/35 bg-[#3b82f6]/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#93c5fd]">
+                      {topic.status ?? "ACTIVE"}
+                    </span>
+                    <span className="text-xs text-[#94a3b8]">
+                      {topic.createdAt
+                        ? new Intl.DateTimeFormat("vi-VN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(topic.createdAt))
+                        : "—"}
+                    </span>
+                  </div>
+                  <div className="mt-3">
+                    <TopicActions topic={topic} />
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+
+          <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
             <div className="min-w-[1300px]">
               <div className="grid grid-cols-[minmax(0,_1.6fr)_minmax(0,_2fr)_160px_200px_96px] items-center gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
                 <span>Chủ đề</span>

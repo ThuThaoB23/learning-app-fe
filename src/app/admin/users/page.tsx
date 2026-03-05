@@ -177,7 +177,52 @@ export default async function AdminUsersPage({
           <RefreshButton className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/15 disabled:opacity-60" />
         </div>
 
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+          <div className="mt-6 space-y-3 md:hidden">
+            {users.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 px-4 py-6 text-sm text-[#64748b]">
+                Chưa có dữ liệu người dùng.
+              </div>
+            ) : (
+              users.map((user: AdminUser) => (
+                <article
+                  key={user.id}
+                  className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 p-4 text-sm text-[#e7edf3]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{user.displayName || user.email}</p>
+                    <p className="mt-1 truncate text-xs text-[#64748b]">{user.id}</p>
+                    <p className="mt-2 truncate text-sm text-[#94a3b8]">{user.email}</p>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`${pillBase} ${
+                        roleStyles[user.role] ??
+                        "border-white/10 bg-white/5 text-[#e7edf3]"
+                      }`}
+                    >
+                      {roleLabels[user.role] ?? user.role}
+                    </span>
+                    <span
+                      className={`${pillBase} ${
+                        statusStyles[user.status ?? ""] ??
+                        "border-white/10 bg-white/5 text-[#e7edf3]"
+                      }`}
+                    >
+                      {statusLabels[user.status ?? ""] ?? user.status ?? "Không rõ"}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs text-[#94a3b8]">
+                    Đăng nhập: {formatDate(user.lastLoginAt)}
+                  </p>
+                  <div className="mt-3">
+                    <UserActions user={user} />
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+
+          <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
             <div className="min-w-[980px]">
               <div className="grid grid-cols-[minmax(0,_1.4fr)_minmax(0,_1.6fr)_140px_140px_170px_80px] gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
                 <span>Người dùng</span>
@@ -202,13 +247,9 @@ export default async function AdminUsersPage({
                         <p className="truncate font-semibold">
                           {user.displayName || user.email}
                         </p>
-                        <p className="truncate text-xs text-[#64748b]">
-                          {user.id}
-                        </p>
+                        <p className="truncate text-xs text-[#64748b]">{user.id}</p>
                       </div>
-                      <p className="truncate text-sm text-[#94a3b8]">
-                        {user.email}
-                      </p>
+                      <p className="truncate text-sm text-[#94a3b8]">{user.email}</p>
                       <span
                         className={`${pillBase} ${
                           roleStyles[user.role] ??

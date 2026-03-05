@@ -28,7 +28,8 @@ type TopicOption = {
 
 type MenuPos = {
   top: number;
-  right: number;
+  left: number;
+  width: number;
 };
 
 type Status = {
@@ -184,9 +185,21 @@ export default function VocabActions({ vocab }: VocabActionsProps) {
     }
 
     const rect = buttonRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const screenPadding = 8;
+    const maxMenuWidth = Math.max(160, viewportWidth - screenPadding * 2);
+    const menuWidth = Math.min(224, maxMenuWidth);
+    const preferredLeft = rect.right - menuWidth;
+    const maxLeft = viewportWidth - menuWidth - screenPadding;
+    const left = Math.min(
+      Math.max(preferredLeft, screenPadding),
+      Math.max(screenPadding, maxLeft),
+    );
+
     setMenuPos({
       top: rect.bottom + 8,
-      right: window.innerWidth - rect.right,
+      left,
+      width: menuWidth,
     });
   };
 
@@ -301,8 +314,8 @@ export default function VocabActions({ vocab }: VocabActionsProps) {
         ? createPortal(
             <div
               ref={menuRef}
-              className="fixed z-[120] w-56 rounded-2xl border border-white/10 bg-[#0f172a] p-2 shadow-[0_20px_60px_rgba(6,10,18,0.6)]"
-              style={{ top: menuPos.top, right: menuPos.right }}
+              className="fixed z-[120] rounded-2xl border border-white/10 bg-[#0f172a] p-2 shadow-[0_20px_60px_rgba(6,10,18,0.6)]"
+              style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
             >
               <Link
                 href={detailHref}

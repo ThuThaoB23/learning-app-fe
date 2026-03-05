@@ -212,7 +212,53 @@ export default async function AdminReviewsPage({ searchParams }: AdminReviewsPag
             </span>
           </div>
 
-          <div className="mt-2 overflow-x-auto rounded-2xl border border-white/10">
+          <div className="mt-2 space-y-3 md:hidden">
+            {items.length === 0 ? (
+              <div className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 px-4 py-6 text-sm text-[#64748b]">
+                Chưa có đóng góp nào phù hợp bộ lọc hiện tại.
+              </div>
+            ) : (
+              items.map((item) => {
+                const statusMeta = getStatusMeta(item.status);
+                const isActive = item.id === selectedId;
+                return (
+                  <article
+                    key={item.id}
+                    className={`rounded-2xl border p-4 text-sm text-[#e7edf3] ${
+                      isActive
+                        ? "border-white/20 bg-white/10"
+                        : "border-white/10 bg-[#0b0f14]/40"
+                    }`}
+                  >
+                    <p className="truncate font-semibold">{getQueueTitle(item)}</p>
+                    <p className="mt-1 truncate text-xs text-[#64748b]">{item.partOfSpeech || "—"}</p>
+                    <p className="mt-2 text-sm text-[#94a3b8]">
+                      {item.contributorDisplayName || item.contributorUserId || "Ẩn danh"}
+                    </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <span className="text-xs uppercase text-[#94a3b8]">{item.language || "—"}</span>
+                      <span className={`${pillBase} ${statusMeta.className}`}>{statusMeta.label}</span>
+                    </div>
+                    <p className="mt-3 text-xs text-[#94a3b8]">{formatDateTime(item.createdAt)}</p>
+                    <div className="mt-3">
+                      <Link
+                        href={buildHref({ selected: item.id, page: currentPage })}
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                          isActive
+                            ? "border-white/25 bg-white/10 text-[#e7edf3]"
+                            : "border-white/10 text-[#e7edf3] hover:bg-white/10"
+                        }`}
+                      >
+                        Xem chi tiết
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            )}
+          </div>
+
+          <div className="mt-2 hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
             <div className="min-w-[980px]">
               <div className="grid grid-cols-[minmax(0,_1.6fr)_minmax(0,_1.25fr)_110px_170px_210px_96px] items-center gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
                 <span>Từ đóng góp</span>

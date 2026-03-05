@@ -194,6 +194,35 @@ export const createDailySession = async <TResponse = Record<string, unknown>>() 
   );
 };
 
+type CreateTopicSessionInput = {
+  topicIds: string[];
+  totalItems?: number;
+};
+
+export const createTopicSession = async <TResponse = Record<string, unknown>>(
+  input: CreateTopicSessionInput,
+) => {
+  const topicIds = input.topicIds
+    .map((item) => item.trim())
+    .filter((item, index, array) => item && array.indexOf(item) === index);
+
+  const rawTotal = input.totalItems;
+  const totalItems =
+    typeof rawTotal === "number" && Number.isFinite(rawTotal)
+      ? Math.max(1, Math.floor(rawTotal))
+      : undefined;
+
+  return request<TResponse>(
+    "/me/sessions/topic",
+    "POST",
+    "Không thể tạo phiên theo chủ đề.",
+    {
+      topicIds,
+      totalItems,
+    },
+  );
+};
+
 export const completeSession = async <TResponse = Record<string, unknown>>(
   sessionId: string,
 ) => {
@@ -320,6 +349,34 @@ export const submitSessionItemAnswer = async <
     {
       answer: input.answer,
       timeMs: Math.max(0, input.timeMs),
+    },
+  );
+};
+
+export type SubmitSessionAnswersInput = {
+  answers: Array<{
+    itemId: string;
+    answer: string;
+    timeMs: number;
+  }>;
+};
+
+export const submitSessionAnswers = async <
+  TResponse = Record<string, unknown>,
+>(
+  sessionId: string,
+  input: SubmitSessionAnswersInput,
+) => {
+  return request<TResponse>(
+    `/me/sessions/${sessionId}/answers`,
+    "POST",
+    "Không thể nộp toàn bộ đáp án.",
+    {
+      answers: input.answers.map((item) => ({
+        itemId: item.itemId,
+        answer: item.answer,
+        timeMs: Math.max(0, item.timeMs),
+      })),
     },
   );
 };

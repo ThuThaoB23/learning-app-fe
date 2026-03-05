@@ -79,11 +79,7 @@ export default function SessionStateActions({
             Hủy phiên
           </button>
         </div>
-      ) : (
-        <p className="text-xs text-[#64748b]">
-          Phiên đã ở trạng thái `{normalizedStatus}`, không còn thao tác hoàn thành/hủy.
-        </p>
-      )}
+      ) : null}
       {message ? (
         <p className="text-xs text-[#64748b]" aria-live="polite">
           {message}

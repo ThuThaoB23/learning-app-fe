@@ -111,66 +111,118 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white/90">
-        <div className="overflow-x-auto">
-          <div className="min-w-[920px]">
-            <div className="grid grid-cols-[minmax(0,_1.2fr)_180px_150px_140px_260px] gap-4 bg-[#f8fafc] px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">
-              <span>Từ</span>
-              <span>Thời gian thêm</span>
-              <span>Trạng thái</span>
-              <span>Tiến độ</span>
-              <span>Hành động</span>
-            </div>
-            <div className="divide-y divide-[#e5e7eb]">
-              {items.length === 0 ? (
-                <div className="px-4 py-6 text-sm text-[#64748b]">Chưa có từ vựng nào.</div>
-              ) : (
-                items.map((item) => {
-                  const term =
-                    item.term?.trim() ||
-                    item.vocabulary?.term ||
-                    item.vocabularyId ||
-                    "--";
-                  const progress = Math.min(
-                    100,
-                    Math.max(0, item.progress ?? item.process ?? 0),
-                  );
-                  return (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-[minmax(0,_1.2fr)_180px_150px_140px_260px] gap-4 px-4 py-4 text-sm"
-                    >
-                      <p className="truncate font-semibold text-[#0b0f14]">{term}</p>
-                      <p className="text-xs text-[#64748b]">
-                        {item.createdAt
-                          ? new Intl.DateTimeFormat("vi-VN", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                            }).format(new Date(item.createdAt))
-                          : "--"}
-                      </p>
-                      <span className="w-fit rounded-full border border-[#dbeafe] bg-[#eff6ff] px-2 py-0.5 text-xs font-semibold text-[#1d4ed8]">
+        {items.length === 0 ? (
+          <div className="px-4 py-6 text-sm text-[#64748b]">Chưa có từ vựng nào.</div>
+        ) : (
+          <>
+            <div className="space-y-3 p-3 md:hidden">
+              {items.map((item) => {
+                const term =
+                  item.term?.trim() ||
+                  item.vocabulary?.term ||
+                  item.vocabularyId ||
+                  "--";
+                const progress = Math.min(
+                  100,
+                  Math.max(0, item.progress ?? item.process ?? 0),
+                );
+
+                return (
+                  <article
+                    key={item.id}
+                    className="space-y-3 rounded-xl border border-[#e5e7eb] bg-white p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="min-w-0 text-sm font-semibold text-[#0b0f14]">{term}</p>
+                      <span className="shrink-0 rounded-full border border-[#dbeafe] bg-[#eff6ff] px-2 py-0.5 text-[11px] font-semibold text-[#1d4ed8]">
                         {item.status || "NEW"}
                       </span>
-                      <div className="space-y-1">
-                        <p className="text-xs font-semibold text-[#0b0f14]">{progress}%</p>
-                        <div className="h-2 rounded-full bg-[#e5e7eb]">
-                          <div
-                            className="h-2 rounded-full bg-[#34d399]"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-                      <MyVocabActions
-                        vocabularyId={item.vocabularyId ?? undefined}
-                        currentStatus={item.status}
-                      />
                     </div>
-                  );
-                })
-              )}
+                    <p className="text-xs text-[#64748b]">
+                      {item.createdAt
+                        ? new Intl.DateTimeFormat("vi-VN", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          }).format(new Date(item.createdAt))
+                        : "--"}
+                    </p>
+                    <div className="space-y-1">
+                      <p className="text-xs font-semibold text-[#0b0f14]">{progress}%</p>
+                      <div className="h-2 rounded-full bg-[#e5e7eb]">
+                        <div
+                          className="h-2 rounded-full bg-[#34d399]"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                    </div>
+                    <MyVocabActions
+                      vocabularyId={item.vocabularyId ?? undefined}
+                      currentStatus={item.status}
+                    />
+                  </article>
+                );
+              })}
             </div>
-          </div>
-        </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <div className="min-w-[920px]">
+                <div className="grid grid-cols-[minmax(0,_1.2fr)_180px_150px_140px_260px] gap-4 bg-[#f8fafc] px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">
+                  <span>Từ</span>
+                  <span>Thời gian thêm</span>
+                  <span>Trạng thái</span>
+                  <span>Tiến độ</span>
+                  <span>Hành động</span>
+                </div>
+                <div className="divide-y divide-[#e5e7eb]">
+                  {items.map((item) => {
+                    const term =
+                      item.term?.trim() ||
+                      item.vocabulary?.term ||
+                      item.vocabularyId ||
+                      "--";
+                    const progress = Math.min(
+                      100,
+                      Math.max(0, item.progress ?? item.process ?? 0),
+                    );
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="grid grid-cols-[minmax(0,_1.2fr)_180px_150px_140px_260px] gap-4 px-4 py-4 text-sm"
+                      >
+                        <p className="truncate font-semibold text-[#0b0f14]">{term}</p>
+                        <p className="text-xs text-[#64748b]">
+                          {item.createdAt
+                            ? new Intl.DateTimeFormat("vi-VN", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                              }).format(new Date(item.createdAt))
+                            : "--"}
+                        </p>
+                        <span className="w-fit rounded-full border border-[#dbeafe] bg-[#eff6ff] px-2 py-0.5 text-xs font-semibold text-[#1d4ed8]">
+                          {item.status || "NEW"}
+                        </span>
+                        <div className="space-y-1">
+                          <p className="text-xs font-semibold text-[#0b0f14]">{progress}%</p>
+                          <div className="h-2 rounded-full bg-[#e5e7eb]">
+                            <div
+                              className="h-2 rounded-full bg-[#34d399]"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                        </div>
+                        <MyVocabActions
+                          vocabularyId={item.vocabularyId ?? undefined}
+                          currentStatus={item.status}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 text-sm shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
@@ -178,7 +230,7 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
           Trang <span className="font-semibold text-[#0b0f14]">{currentPage + 1}</span> /{" "}
           <span className="font-semibold text-[#0b0f14]">{totalPages}</span>
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <Link
             href={buildHref(Math.max(0, currentPage - 1))}
             aria-disabled={currentPage === 0}

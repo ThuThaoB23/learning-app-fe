@@ -110,8 +110,8 @@ export default function UserNav({
     <nav
       className={
         mobile
-          ? "flex gap-2 overflow-x-auto pb-1"
-          : "space-y-1 text-sm font-medium text-[#64748b]"
+          ? "grid grid-cols-3 gap-2"
+          : "space-y-1 text-sm font-medium"
       }
     >
       {items.map((item) => {
@@ -120,16 +120,16 @@ export default function UserNav({
             ? pathname === "/dashboard"
             : pathname === item.href || pathname.startsWith(`${item.href}/`);
         const base = mobile
-          ? "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3f7fc]"
-          : `flex h-11 items-center rounded-xl transition-all duration-200 ease-out ${
+          ? "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl border px-2 py-2.5 text-[11px] font-semibold leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f3f7fc]"
+          : `flex h-11 items-center rounded-xl border border-transparent transition-colors duration-150 ${
               collapsed ? "justify-center px-2" : "gap-3 px-3"
             } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f7fbff]`;
         const activeClass = mobile
-          ? "border-[#0f172a] bg-[#0f172a] text-white"
-          : "bg-[#112844] text-[#f8fafc]";
+          ? "border-[#0f172a] bg-[#0f172a] text-white shadow-[0_8px_20px_rgba(15,23,42,0.2)]"
+          : "border-[#0f2746]/20 bg-[#0f2746] text-[#f8fafc]";
         const idleClass = mobile
-          ? "border-[#d6dfeb] bg-white text-[#475569] hover:border-[#334155] hover:bg-[#f8fafc] hover:text-[#0f172a]"
-          : "text-[#4b6077] hover:bg-[#e8eef7] hover:text-[#0f172a]";
+          ? "border-[#d6dfeb] bg-white text-[#334155] hover:border-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#0f172a]"
+          : "text-[#334155] hover:border-[#d1dbea] hover:bg-[#e8eef7] hover:text-[#0f172a]";
 
         return (
           <Link
@@ -139,7 +139,9 @@ export default function UserNav({
             className={`${base} ${active ? activeClass : idleClass}`}
           >
             {getNavIcon(item.href)}
-            {mobile || !collapsed ? <span>{item.label}</span> : null}
+            {mobile || !collapsed ? (
+              <span className={mobile ? "text-center" : undefined}>{item.label}</span>
+            ) : null}
           </Link>
         );
       })}

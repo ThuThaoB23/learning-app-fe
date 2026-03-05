@@ -292,7 +292,92 @@ export default async function AdminActivityLogsPage({
           </div>
         </div>
 
-        <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+        <div className="mt-6 space-y-3 md:hidden">
+          {logs.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 px-4 py-6 text-sm text-[#64748b]">
+              {hasError
+                ? "Không thể tải dữ liệu activity logs."
+                : "Chưa có activity log phù hợp bộ lọc."}
+            </div>
+          ) : (
+            logs.map((log: UserActivityLogResponse) => {
+              const activityKey = log.activityType || "UNKNOWN";
+              const targetKey = log.targetType || "";
+              const userDisplayName = log.userDisplayName?.trim() || "Không rõ tên";
+              const metadataText = stringifyMetadata(log.metadata);
+              const filterUserHref = log.userId
+                ? `/admin/activity-logs?${buildQueryString({
+                    page: 0,
+                    ...commonParams,
+                    userId: log.userId,
+                  })}`
+                : null;
+
+              return (
+                <article
+                  key={log.id}
+                  className="rounded-2xl border border-white/10 bg-[#0b0f14]/40 p-4 text-sm text-[#e7edf3]"
+                >
+                  <p className="truncate font-semibold">{userDisplayName}</p>
+                  <p className="mt-1 truncate text-xs text-[#64748b]">{log.userId || "—"}</p>
+                  <p className="mt-1 truncate text-xs text-[#475569]">{log.id}</p>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span
+                      className={`${pillBase} ${
+                        activityTypeStyles[activityKey] ??
+                        "border-white/10 bg-white/5 text-[#e7edf3]"
+                      }`}
+                    >
+                      {activityTypeLabels[activityKey] ?? activityKey}
+                    </span>
+                    <span className="text-xs text-[#94a3b8]">{formatDate(log.createdAt)}</span>
+                  </div>
+
+                  <div className="mt-3 min-w-0">
+                    <p className="truncate font-medium">
+                      {(targetTypeLabels[targetKey] ?? targetKey) || "—"}
+                    </p>
+                    <p className="truncate text-xs text-[#64748b]">
+                      {truncateMiddle(log.targetId)}
+                    </p>
+                    {log.targetId ? (
+                      <p className="truncate text-xs text-[#475569]">{log.targetId}</p>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-3 min-w-0">
+                    {metadataText ? (
+                      <details className="rounded-xl border border-white/10 bg-[#0b0f14]/40 px-3 py-2">
+                        <summary className="cursor-pointer list-none text-xs font-semibold text-[#e7edf3]">
+                          Xem metadata
+                        </summary>
+                        <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-all text-xs text-[#cbd5e1]">
+                          {metadataText}
+                        </pre>
+                      </details>
+                    ) : (
+                      <span className="text-xs text-[#64748b]">Không có metadata</span>
+                    )}
+                  </div>
+
+                  {filterUserHref ? (
+                    <div className="mt-3">
+                      <Link
+                        href={filterUserHref}
+                        className="inline-flex rounded-full border border-white/10 px-3 py-1 text-xs font-semibold text-[#e7edf3] transition hover:bg-white/10"
+                      >
+                        Lọc theo user
+                      </Link>
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })
+          )}
+        </div>
+
+        <div className="mt-6 hidden overflow-x-auto rounded-2xl border border-white/10 md:block">
           <div className="min-w-[1400px]">
             <div className="grid grid-cols-[minmax(0,_1.7fr)_200px_minmax(0,_1.6fr)_220px_minmax(0,_1.4fr)_100px] items-center gap-4 bg-[#0b0f14]/70 px-4 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#64748b]">
               <span>Người dùng</span>

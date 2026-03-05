@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import AuthSessionGuard from "@/components/auth-session-guard";
 import { getCurrentUser } from "@/lib/auth";
 import UserHeader from "./_components/user-header";
-import UserNav from "./_components/user-nav";
 import UserSidebar from "./_components/user-sidebar";
 
 export const metadata: Metadata = {
@@ -35,12 +34,12 @@ export default async function UserLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[#f3f7fc] text-[#0f172a]">
+    <div className="min-h-screen overflow-x-hidden bg-[#f3f7fc] text-[#0f172a]">
       <AuthSessionGuard />
-      <div className="relative flex min-h-screen w-full">
+      <div className="relative flex min-h-screen w-full overflow-x-hidden">
         <UserSidebar items={navItems} />
 
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
           <UserHeader
             items={navItems}
             displayName={user.displayName}
@@ -48,12 +47,7 @@ export default async function UserLayout({
             avatarUrl={user.avatarUrl}
           />
 
-          <main className="flex-1 px-6 py-8 lg:px-10">
-            <div className="mb-6 lg:hidden">
-              <UserNav items={navItems} mobile />
-            </div>
-            {children}
-          </main>
+          <main className="min-w-0 flex-1 px-4 pb-6 pt-28 sm:px-6 sm:pb-8 sm:pt-32 lg:px-10 lg:py-8">{children}</main>
         </div>
       </div>
     </div>

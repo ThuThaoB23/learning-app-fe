@@ -1,9 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { TestItemResponse } from "@/lib/user-api";
-import { submitSessionItemAnswer } from "@/lib/user-actions-client";
+import {
+  completeSession,
+  submitSessionAnswers,
+  submitSessionItemAnswer,
+} from "@/lib/user-actions-client";
 
 type PracticeSessionRunnerProps = {
   sessionId: string;
@@ -355,13 +359,18 @@ export default function PracticeSessionRunner({
   items,
 }: PracticeSessionRunnerProps) {
   const router = useRouter();
+  const questionCardRef = useRef<HTMLElement | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [fillMissingAnswers, setFillMissingAnswers] = useState<
     Record<string, string[]>
   >({});
   const [results, setResults] = useState<Record<string, ItemResult>>({});
-  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
+  const [isSubmittingAll, setIsSubmittingAll] = useState(false);
+  const [hasSubmittedAll, setHasSubmittedAll] = useState(false);
+  const [confirmSubmitOpen, setConfirmSubmitOpen] = useState(false);
+  const [confirmMissingCount, setConfirmMissingCount] = useState(0);
+  const [maxQuestionCardHeight, setMaxQuestionCardHeight] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const currentItem = items[currentIndex];
@@ -385,6 +394,31 @@ export default function PracticeSessionRunner({
     const safeIndex = Math.min(items.length - 1, Math.max(0, index));
     setCurrentIndex(safeIndex);
     setError(null);
+  };
+
+  const resolveDraftAnswer = (item: TestItemResponse): string | null => {
+    const itemPayload = toRecord(item.questionPayload);
+    const itemFillConfig = getFillMissingConfig(itemPayload, item.questionType);
+    if (itemFillConfig) {
+      const filledChars =
+        fillMissingAnswers[item.id] ??
+        splitFillMissingAnswer(
+          itemFillConfig.maskedTerm,
+          itemFillConfig.missingIndexes,
+          item.userAnswer,
+        );
+      if (filledChars.some((char) => !char.trim())) {
+        return null;
+      }
+      const chars = itemFillConfig.maskedTerm.split("");
+      itemFillConfig.missingIndexes.forEach((index, idx) => {
+        chars[index] = (filledChars[idx] || "").trim();
+      });
+      const combined = chars.join("").trim();
+      return combined || null;
+    }
+    const raw = (answers[item.id] ?? item.userAnswer ?? "").trim();
+    return raw || null;
   };
 
   const currentAnswer = currentItem
@@ -424,6 +458,7 @@ export default function PracticeSessionRunner({
           return mappedLabel || rawExpected;
         })()
       : null;
+  const hasCurrentDraft = currentItem ? Boolean(resolveDraftAnswer(currentItem)) : false;
   const currentFillMissingValues =
     currentItem && fillMissingConfig
       ? fillMissingAnswers[currentItem.id] ??
@@ -434,60 +469,194 @@ export default function PracticeSessionRunner({
         )
       : [];
 
-  const submitCurrentAnswer = async () => {
-    if (!currentItem) {
+  const pendingItems = items.filter((item) => {
+    const status = normalizeStatus(results[item.id]?.status || item.status || "PENDING");
+    return status === "PENDING";
+  });
+  const readyCount = pendingItems.reduce((count, item) => {
+    return count + (resolveDraftAnswer(item) ? 1 : 0);
+  }, 0);
+
+  const collectPendingAnswers = () => {
+    const answeredItems: Array<{ item: TestItemResponse; answer: string }> = [];
+    const unansweredItems: TestItemResponse[] = [];
+    for (const item of pendingItems) {
+      const answer = resolveDraftAnswer(item);
+      if (!answer) {
+        unansweredItems.push(item);
+        continue;
+      }
+      answeredItems.push({ item, answer });
+    }
+    return { answeredItems, unansweredItems };
+  };
+
+  const uiLanguage: "vi" | "en" = "vi";
+
+  useEffect(() => {
+    const element = questionCardRef.current;
+    if (!element) {
       return;
     }
 
-    let answer = currentAnswer.trim();
-
-    if (fillMissingConfig && currentItem) {
-      const filledChars =
-        currentFillMissingValues;
-      const hasEmpty = filledChars.some((char) => !char.trim());
-      if (hasEmpty) {
-        setError("Bạn chưa điền đủ ký tự còn thiếu.");
+    const updateHeight = () => {
+      const nextHeight = Math.ceil(element.getBoundingClientRect().height);
+      if (!nextHeight) {
         return;
       }
-      const chars = fillMissingConfig.maskedTerm.split("");
-      fillMissingConfig.missingIndexes.forEach((index, idx) => {
-        chars[index] = (filledChars[idx] || "").trim();
-      });
-      answer = chars.join("");
+      setMaxQuestionCardHeight((prev) => (nextHeight > prev ? nextHeight : prev));
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [currentIndex]);
+
+  const syncedMinHeightStyle =
+    maxQuestionCardHeight > 0 ? { minHeight: `${maxQuestionCardHeight}px` } : undefined;
+
+  const questionTypeLabel = useMemo(() => {
+    const labels: Record<string, { vi: string; en: string }> = {
+      MULTIPLE_CHOICE: {
+        vi: "Trắc nghiệm",
+        en: "Multiple choice",
+      },
+      TRUE_FALSE: {
+        vi: "Đúng / Sai",
+        en: "True / False",
+      },
+      FILL_MISSING_CHARS: {
+        vi: "Điền ký tự còn thiếu",
+        en: "Fill missing characters",
+      },
+      FILL_IN_BLANK: {
+        vi: "Điền vào chỗ trống",
+        en: "Fill in the blank",
+      },
+      SHORT_ANSWER: {
+        vi: "Trả lời ngắn",
+        en: "Short answer",
+      },
+      MATCHING: {
+        vi: "Nối đáp án",
+        en: "Matching",
+      },
+    };
+
+    const normalized = (currentItem?.questionType || "").toUpperCase();
+    const matched = labels[normalized];
+    if (matched) {
+      return matched[uiLanguage];
     }
 
-    if (!answer) {
-      setError("Bạn chưa nhập/chọn đáp án.");
-      return;
+    if (!normalized) {
+      return uiLanguage === "vi" ? "Chưa xác định" : "Unknown";
     }
-    if (isCurrentAnswered) {
-      setError("Câu này đã trả lời, không thể gửi lại.");
+
+    const friendly = normalized
+      .toLowerCase()
+      .split("_")
+      .filter(Boolean)
+      .map((word) => word[0].toUpperCase() + word.slice(1))
+      .join(" ");
+
+    return friendly || (uiLanguage === "vi" ? "Chưa xác định" : "Unknown");
+  }, [currentItem?.questionType, uiLanguage]);
+
+  const processSubmit = async (
+    answeredItems: Array<{ item: TestItemResponse; answer: string }>,
+    unansweredItems: TestItemResponse[],
+  ) => {
+    if (!pendingItems.length) {
+      setError("Không còn câu hỏi chờ chấm.");
       return;
     }
 
     setError(null);
-    setLoadingItemId(currentItem.id);
-    const response = await submitSessionItemAnswer(sessionId, currentItem.id, {
-      answer,
-      timeMs: 0,
-    });
-    setLoadingItemId(null);
+    setIsSubmittingAll(true);
+    const nextResults: Record<string, ItemResult> = {};
 
-    if (!response.ok) {
-      setError(response.message);
+    if (unansweredItems.length === 0) {
+      const response = await submitSessionAnswers(sessionId, {
+        answers: answeredItems.map((entry) => ({
+          itemId: entry.item.id,
+          answer: entry.answer,
+          timeMs: 0,
+        })),
+      });
+
+      if (!response.ok) {
+        setIsSubmittingAll(false);
+        setError(response.message);
+        return;
+      }
+
+      const responseRecord = toRecord(response.data);
+      const rawResults = Array.isArray(responseRecord.results)
+        ? responseRecord.results
+        : [];
+      for (const rawResult of rawResults) {
+        const resultRecord = toRecord(rawResult);
+        const itemId =
+          (typeof resultRecord.itemId === "string" && resultRecord.itemId) ||
+          (typeof resultRecord.id === "string" && resultRecord.id) ||
+          "";
+        if (!itemId) {
+          continue;
+        }
+        nextResults[itemId] = normalizeResult(resultRecord);
+      }
+    } else {
+      for (const entry of answeredItems) {
+        const response = await submitSessionItemAnswer(sessionId, entry.item.id, {
+          answer: entry.answer,
+          timeMs: 0,
+        });
+        if (!response.ok) {
+          setIsSubmittingAll(false);
+          setError(response.message);
+          return;
+        }
+        nextResults[entry.item.id] = normalizeResult(response.data);
+      }
+    }
+
+    const completeResponse = await completeSession(sessionId);
+    if (!completeResponse.ok) {
+      setIsSubmittingAll(false);
+      setResults((prev) => ({ ...prev, ...nextResults }));
+      setHasSubmittedAll(true);
+      setError(`Đã nộp đáp án nhưng chưa thể hoàn thành phiên: ${completeResponse.message}`);
       return;
     }
 
-    setResults((prev) => ({
-      ...prev,
-      [currentItem.id]: normalizeResult(response.data),
-    }));
+    setResults((prev) => ({ ...prev, ...nextResults }));
+    setHasSubmittedAll(true);
+    setIsSubmittingAll(false);
+    router.refresh();
+  };
 
-    if (currentIndex < items.length - 1) {
-      goToIndex(currentIndex + 1);
-    } else {
-      router.refresh();
+  const submitAllAnswers = async () => {
+    if (!pendingItems.length) {
+      setError("Không còn câu hỏi chờ chấm.");
+      return;
     }
+
+    const { answeredItems, unansweredItems } = collectPendingAnswers();
+    if (unansweredItems.length > 0) {
+      setConfirmMissingCount(unansweredItems.length);
+      setConfirmSubmitOpen(true);
+      return;
+    }
+
+    await processSubmit(answeredItems, unansweredItems);
+  };
+
+  const confirmSubmitWithMissing = async () => {
+    setConfirmSubmitOpen(false);
+    const { answeredItems, unansweredItems } = collectPendingAnswers();
+    await processSubmit(answeredItems, unansweredItems);
   };
 
   if (!items.length) {
@@ -500,42 +669,58 @@ export default function PracticeSessionRunner({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {items.map((item, index) => {
-          const itemStatus = normalizeStatus(
-            results[item.id]?.status || item.status || "PENDING",
-          );
-          const isCurrent = index === currentIndex;
-          const isCorrect = isCorrectStatus(itemStatus);
-          const isWrong = isWrongStatus(itemStatus);
-          const done = isAnsweredStatus(itemStatus);
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => goToIndex(index)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                isCurrent
-                  ? "border-[#0b0f14] bg-[#0b0f14] text-white"
-                  : isCorrect
-                    ? "border-[#34d399]/40 bg-[#ecfdf5] text-[#166534]"
-                    : isWrong
-                      ? "border-[#fb7185]/40 bg-[#fff1f2] text-[#be123c]"
-                      : done
-                        ? "border-[#cbd5e1] bg-[#f8fafc] text-[#475569]"
-                    : "border-[#e5e7eb] bg-white text-[#64748b]"
-              }`}
-            >
-              {index + 1}
-            </button>
-          );
-        })}
-      </div>
+      <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <section
+          style={syncedMinHeightStyle}
+          className="h-full rounded-2xl border border-white/70 bg-white/85 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)] lg:order-1"
+        >
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#64748b]">
+            Danh sách câu hỏi
+          </p>
+          <div className="grid grid-cols-5 gap-2">
+            {items.map((item, index) => {
+              const itemStatus = normalizeStatus(
+                results[item.id]?.status || item.status || "PENDING",
+              );
+              const isCurrent = index === currentIndex;
+              const isCorrect = isCorrectStatus(itemStatus);
+              const isWrong = isWrongStatus(itemStatus);
+              const done = isAnsweredStatus(itemStatus);
+              const hasDraft = !done && Boolean(resolveDraftAnswer(item));
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => goToIndex(index)}
+                  className={`h-10 w-10 rounded-lg border text-sm font-semibold transition ${
+                    isCurrent
+                      ? "border-[#0b0f14] bg-[#0b0f14] text-white"
+                      : isCorrect
+                        ? "border-[#34d399]/40 bg-[#ecfdf5] text-[#166534]"
+                        : isWrong
+                          ? "border-[#fb7185]/40 bg-[#fff1f2] text-[#be123c]"
+                          : hasDraft
+                            ? "border-[#60a5fa]/40 bg-[#eff6ff] text-[#1d4ed8]"
+                            : done
+                              ? "border-[#cbd5e1] bg-[#f8fafc] text-[#475569]"
+                              : "border-[#e5e7eb] bg-white text-[#64748b]"
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-      <article className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+        <article
+          ref={questionCardRef}
+          style={syncedMinHeightStyle}
+          className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.08)] lg:order-2"
+        >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold text-[#0b0f14]">
-            Câu {currentIndex + 1}: {currentItem.questionType || "UNKNOWN"}
+            {uiLanguage === "vi" ? "Câu" : "Question"} {currentIndex + 1}: {questionTypeLabel}
           </h3>
           <span
             className={`rounded-full border px-3 py-1 text-xs font-semibold ${
@@ -543,10 +728,14 @@ export default function PracticeSessionRunner({
                 ? "border-[#34d399]/40 bg-[#ecfdf5] text-[#166534]"
                 : currentStatusIsWrong
                   ? "border-[#fb7185]/40 bg-[#fff1f2] text-[#be123c]"
+                  : hasCurrentDraft
+                    ? "border-[#60a5fa]/40 bg-[#eff6ff] text-[#1d4ed8]"
                   : "border-[#e5e7eb] text-[#64748b]"
             }`}
           >
-            {currentResult?.status || currentItem.status || "PENDING"}
+            {hasCurrentDraft && !isCurrentAnswered
+              ? "ĐÃ CHỌN"
+              : currentResult?.status || currentItem.status || "PENDING"}
           </span>
         </div>
 
@@ -678,6 +867,11 @@ export default function PracticeSessionRunner({
         </div>
 
         {error ? <p className="mt-3 text-sm text-[#be123c]">{error}</p> : null}
+        {hasSubmittedAll && pendingItems.length === 0 ? (
+          <p className="mt-3 text-sm text-[#166534]">
+            Đã nộp toàn bộ đáp án, hệ thống đã chấm xong.
+          </p>
+        ) : null}
         {currentResult?.message ? (
           <p
             className={`mt-3 text-sm ${
@@ -708,15 +902,15 @@ export default function PracticeSessionRunner({
           </button>
           <button
             type="button"
-            onClick={submitCurrentAnswer}
-            disabled={loadingItemId === currentItem.id || isCurrentAnswered}
+            onClick={submitAllAnswers}
+            disabled={isSubmittingAll || pendingItems.length === 0}
             className="rounded-full bg-[#0b0f14] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#111827] disabled:opacity-70"
           >
-            {isCurrentAnswered
-              ? "Đã trả lời"
-              : loadingItemId === currentItem.id
-                ? "Đang gửi..."
-                : "Gửi đáp án"}
+            {isSubmittingAll
+              ? "Đang nộp bài..."
+              : pendingItems.length === 0
+                ? "Không còn câu chờ chấm"
+                : `Nộp bài (${readyCount}/${pendingItems.length})`}
           </button>
           <button
             type="button"
@@ -727,7 +921,38 @@ export default function PracticeSessionRunner({
             Câu sau
           </button>
         </div>
-      </article>
+        </article>
+      </div>
+
+      {confirmSubmitOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#020617]/55 px-4 backdrop-blur-[1px]">
+          <div className="w-full max-w-md rounded-2xl border border-[#dbe4f0] bg-white p-5 shadow-[0_30px_80px_rgba(2,6,23,0.3)]">
+            <h4 className="text-base font-semibold text-[#0f172a]">Xác nhận nộp bài</h4>
+            <p className="mt-2 text-sm text-[#475569]">
+              Bạn còn <span className="font-semibold">{confirmMissingCount}</span> câu
+              chưa trả lời. Nếu nộp ngay, các câu này sẽ bị bỏ qua.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmSubmitOpen(false)}
+                disabled={isSubmittingAll}
+                className="rounded-full border border-[#d6dfeb] px-4 py-2 text-sm font-semibold text-[#334155] transition hover:border-[#94a3b8] hover:bg-[#f8fafc] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Quay lại làm tiếp
+              </button>
+              <button
+                type="button"
+                onClick={confirmSubmitWithMissing}
+                disabled={isSubmittingAll}
+                className="rounded-full bg-[#0f172a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1e293b] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Nộp bài ngay
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

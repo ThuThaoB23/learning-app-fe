@@ -40,8 +40,8 @@ export default async function NewUserVocabPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <section className="rounded-3xl border border-white/70 bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-6">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-start">
           <div>
             <h1 className="text-2xl font-semibold text-[#0b0f14]">Thêm mới từ vựng</h1>
           </div>
@@ -56,7 +56,7 @@ export default async function NewUserVocabPage() {
 
       <UserVocabContributionForm topics={topics} />
 
-      <section className="rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.08)]">
+      <section className="rounded-3xl border border-white/70 bg-white/90 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.08)] sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-[#0b0f14]">Đóng góp gần đây của tôi</h2>
           <span className="rounded-full border border-[#e5e7eb] px-3 py-1 text-xs font-semibold text-[#64748b]">

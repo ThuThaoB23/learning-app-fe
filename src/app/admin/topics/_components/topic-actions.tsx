@@ -13,7 +13,8 @@ type TopicActionsProps = {
 
 type MenuPos = {
   top: number;
-  right: number;
+  left: number;
+  width: number;
 };
 
 type Status = {
@@ -28,33 +29,23 @@ const statusLabels: Record<(typeof statusOptions)[number], string> = {
   INACTIVE: "Không hoạt động",
 };
 
+const buildFormFromTopic = (topic: TopicResponse) => ({
+  name: topic.name ?? topic.title ?? "",
+  description: topic.description ?? "",
+  status: topic.status ?? "ACTIVE",
+});
+
 export default function TopicActions({ topic }: TopicActionsProps) {
   const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuPos, setMenuPos] = useState<MenuPos | null>(null);
-  const [mounted, setMounted] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [form, setForm] = useState({
-    name: topic.name ?? topic.title ?? "",
-    description: topic.description ?? "",
-    status: topic.status ?? "ACTIVE",
-  });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setForm({
-      name: topic.name ?? topic.title ?? "",
-      description: topic.description ?? "",
-      status: topic.status ?? "ACTIVE",
-    });
-  }, [topic]);
+  const [form, setForm] = useState(() => buildFormFromTopic(topic));
+  const canPortal = typeof document !== "undefined";
 
   useEffect(() => {
     if (!menuPos) return;
@@ -84,9 +75,21 @@ export default function TopicActions({ topic }: TopicActionsProps) {
   const openMenu = () => {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const screenPadding = 8;
+    const maxMenuWidth = Math.max(160, viewportWidth - screenPadding * 2);
+    const menuWidth = Math.min(192, maxMenuWidth);
+    const preferredLeft = rect.right - menuWidth;
+    const maxLeft = viewportWidth - menuWidth - screenPadding;
+    const left = Math.min(
+      Math.max(preferredLeft, screenPadding),
+      Math.max(screenPadding, maxLeft),
+    );
+
     setMenuPos({
       top: rect.bottom + 8,
-      right: window.innerWidth - rect.right,
+      left,
+      width: menuWidth,
     });
   };
 
@@ -153,18 +156,19 @@ export default function TopicActions({ topic }: TopicActionsProps) {
         ...
       </button>
 
-      {mounted && menuPos
+      {canPortal && menuPos
         ? createPortal(
             <div
               ref={menuRef}
-              className="fixed z-[120] w-48 rounded-2xl border border-white/10 bg-[#0f172a] p-2 shadow-[0_20px_60px_rgba(6,10,18,0.6)]"
-              style={{ top: menuPos.top, right: menuPos.right }}
+              className="fixed z-[120] rounded-2xl border border-white/10 bg-[#0f172a] p-2 shadow-[0_20px_60px_rgba(6,10,18,0.6)]"
+              style={{ top: menuPos.top, left: menuPos.left, width: menuPos.width }}
             >
               <button
                 type="button"
                 onClick={() => {
                   setMenuPos(null);
                   setStatus(null);
+                  setForm(buildFormFromTopic(topic));
                   setShowEdit(true);
                 }}
                 className="flex w-full items-center rounded-xl px-3 py-2 text-sm text-[#e7edf3] transition hover:bg-white/10"
@@ -187,7 +191,7 @@ export default function TopicActions({ topic }: TopicActionsProps) {
           )
         : null}
 
-      {mounted && showEdit
+      {canPortal && showEdit
         ? createPortal(
             <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-10">
               <div
@@ -296,7 +300,7 @@ export default function TopicActions({ topic }: TopicActionsProps) {
           )
         : null}
 
-      {mounted && showConfirm
+      {canPortal && showConfirm
         ? createPortal(
             <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-10">
               <div

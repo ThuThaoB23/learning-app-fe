@@ -165,7 +165,7 @@ export default function CreateVocabModal({ topics }: CreateVocabModalProps) {
 
       {open && typeof document !== "undefined"
         ? createPortal(
-            <div className="fixed inset-0 z-[130] flex items-center justify-center px-4 py-10">
+            <div className="fixed inset-0 z-[130] flex items-start justify-center overflow-y-auto px-3 py-4 sm:items-center sm:px-4 sm:py-10">
               <div
                 className="absolute inset-0 bg-black/55 backdrop-blur-sm"
                 onClick={handleClose}
@@ -173,10 +173,10 @@ export default function CreateVocabModal({ topics }: CreateVocabModalProps) {
               <div
                 role="dialog"
                 aria-modal="true"
-                className="relative z-[131] w-full max-w-3xl rounded-3xl border border-white/10 bg-[#0f172a] p-6 shadow-[0_30px_80px_rgba(6,10,18,0.7)]"
+                className="relative z-[131] my-auto w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-white/10 bg-[#0f172a] p-4 shadow-[0_30px_80px_rgba(6,10,18,0.7)] sm:rounded-3xl sm:p-6"
               >
                 <LoadingOverlay show={isLoading} />
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <h2 className="text-xl font-semibold text-[#e7edf3]">
                     Thêm từ vựng mới
                   </h2>
@@ -307,7 +307,7 @@ export default function CreateVocabModal({ topics }: CreateVocabModalProps) {
                     </div>
                     <div className="space-y-2 rounded-xl border border-white/10 bg-[#0b0f14]/60 p-3">
                       {form.examples.map((example, index) => (
-                        <div key={`example-${index}`} className="flex gap-2">
+                        <div key={`example-${index}`} className="flex flex-col gap-2 sm:flex-row">
                           <input
                             value={example}
                             onChange={(event) =>
@@ -319,7 +319,7 @@ export default function CreateVocabModal({ topics }: CreateVocabModalProps) {
                           <button
                             type="button"
                             onClick={() => removeExample(index)}
-                            className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-[#e7edf3] transition hover:bg-white/10"
+                            className="rounded-xl border border-white/10 px-3 py-2 text-xs font-semibold text-[#e7edf3] transition hover:bg-white/10 sm:shrink-0"
                             aria-label={`Xóa ví dụ ${index + 1}`}
                           >
                             Xóa
@@ -415,18 +415,18 @@ export default function CreateVocabModal({ topics }: CreateVocabModalProps) {
                     </div>
                   ) : null}
 
-                  <div className="flex items-center justify-end gap-3 pt-2">
+                  <div className="flex flex-col-reverse items-stretch justify-end gap-2 pt-2 sm:flex-row sm:items-center sm:gap-3">
                     <button
                       type="button"
                       onClick={handleClose}
-                      className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/10"
+                      className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-[#e7edf3] transition-all duration-200 ease-out hover:bg-white/10 sm:w-auto"
                     >
                       Hủy
                     </button>
                     <button
                       type="submit"
                       disabled={isLoading || topics.length === 0}
-                      className="rounded-full bg-[#e7edf3] px-4 py-2 text-sm font-semibold text-[#0b0f14] transition-all duration-200 ease-out hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="rounded-full bg-[#e7edf3] px-4 py-2 text-sm font-semibold text-[#0b0f14] transition-all duration-200 ease-out hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
                     >
                       {isLoading ? "Đang tạo..." : "Tạo từ vựng"}
                     </button>
