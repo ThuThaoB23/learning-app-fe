@@ -42,12 +42,20 @@ export type TopicResponse = {
   updatedAt?: string | null;
 };
 
+export type VocabularyAudioResponse = {
+  id?: string | null;
+  audioUrl?: string | null;
+  accent?: string | null;
+  position?: number | null;
+};
+
 export type VocabularyResponse = {
   id: string;
   term?: string | null;
   definition?: string | null;
   definitionVi?: string | null;
   examples?: string[] | null;
+  audios?: VocabularyAudioResponse[] | null;
   phonetic?: string | null;
   partOfSpeech?: string | null;
   language?: string | null;
@@ -62,6 +70,7 @@ export type UserVocabularyResponse = {
   term?: string | null;
   userId?: string | null;
   vocabularyId?: string | null;
+  audios?: VocabularyAudioResponse[] | null;
   status?: "NEW" | "LEARNING" | "MASTERED" | string | null;
   progress?: number | null;
   process?: number | null;

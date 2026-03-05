@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import RefreshButton from "@/components/refresh-button";
 import AddToMyVocabButton from "../../_components/add-to-my-vocab-button";
+import VocabAudioButton from "../../_components/vocab-audio-button";
 import { fetchTopics, fetchVocab } from "@/lib/user-api";
 
 export const metadata: Metadata = {
@@ -187,55 +188,67 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps) {
           </div>
         ) : (
           <div className="grid gap-4 xl:grid-cols-2">
-            {vocabularies.map((item) => (
-              <article
-                key={item.id}
-                className="flex h-full flex-col rounded-2xl border border-white/80 bg-white/90 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.07)]"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 space-y-2">
-                    <h3 className="truncate text-lg font-semibold text-[#0b0f14]">
-                      {item.term || "--"}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full border border-[#dbeafe] bg-[#eff6ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1d4ed8]">
-                        {item.language || "en"}
-                      </span>
-                      {item.partOfSpeech ? (
-                        <span className="rounded-full border border-[#e5e7eb] bg-[#f8fafc] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#64748b]">
-                          {item.partOfSpeech}
+            {vocabularies.map((item) => {
+              const audioUrl =
+                item.audios
+                  ?.find((audio) => Boolean(audio?.audioUrl))
+                  ?.audioUrl?.trim() ?? "";
+
+              return (
+                <article
+                  key={item.id}
+                  className="flex h-full flex-col rounded-2xl border border-white/80 bg-white/90 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.07)]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <h3 className="min-w-0 flex-1 truncate text-lg font-semibold text-[#0b0f14]">
+                          {item.term || "--"}
+                        </h3>
+                        {audioUrl ? (
+                          <VocabAudioButton audioUrl={audioUrl} term={item.term} />
+                        ) : null}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="rounded-full border border-[#dbeafe] bg-[#eff6ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#1d4ed8]">
+                          {item.language || "en"}
                         </span>
-                      ) : null}
+                        {item.partOfSpeech ? (
+                          <span className="rounded-full border border-[#e5e7eb] bg-[#f8fafc] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#64748b]">
+                            {item.partOfSpeech}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <AddToMyVocabButton
+                        vocabularyId={item.id}
+                        inMyVocab={item.inMyVocab}
+                      />
                     </div>
                   </div>
-                  <div className="shrink-0">
-                    <AddToMyVocabButton
-                      vocabularyId={item.id}
-                      inMyVocab={item.inMyVocab}
-                    />
-                  </div>
-                </div>
 
-                <div className="mt-4 space-y-2 rounded-xl border border-[#e5e7eb] bg-[#f8fafc] p-3 text-sm">
-                  <p className="text-[#334155]">
-                    {item.definition || "Chưa có định nghĩa."}
-                  </p>
-                  <p className="text-[#64748b]">
-                    {item.definitionVi || "Chưa có định nghĩa tiếng Việt."}
-                  </p>
-                </div>
-
-                <div className="mt-4 flex min-h-10 items-center border-t border-[#edf2f7] pt-3">
-                  {item.examples?.length ? (
-                    <p className="line-clamp-2 text-xs italic text-[#475569]">
-                      &quot;{item.examples[0]}&quot;
+                  <div className="mt-4 space-y-2 rounded-xl border border-[#e5e7eb] bg-[#f8fafc] p-3 text-sm">
+                    <p className="text-[#334155]">
+                      {item.definition || "Chưa có định nghĩa."}
                     </p>
-                  ) : (
-                    <p className="text-xs text-[#94a3b8]">Chưa có ví dụ.</p>
-                  )}
-                </div>
-              </article>
-            ))}
+                    <p className="text-[#64748b]">
+                      {item.definitionVi || "Chưa có định nghĩa tiếng Việt."}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 flex min-h-10 items-center border-t border-[#edf2f7] pt-3">
+                    {item.examples?.length ? (
+                      <p className="line-clamp-2 text-xs italic text-[#475569]">
+                        &quot;{item.examples[0]}&quot;
+                      </p>
+                    ) : (
+                      <p className="text-xs text-[#94a3b8]">Chưa có ví dụ.</p>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import RefreshButton from "@/components/refresh-button";
 import MyVocabActions from "../../_components/my-vocab-actions";
+import VocabAudioButton from "../../_components/vocab-audio-button";
 import { fetchMyVocab } from "@/lib/user-api";
 
 export const metadata: Metadata = {
@@ -122,6 +123,13 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
                   item.vocabulary?.term ||
                   item.vocabularyId ||
                   "--";
+                const audioUrl =
+                  item.audios
+                    ?.find((audio) => Boolean(audio?.audioUrl))
+                    ?.audioUrl?.trim() ??
+                  item.vocabulary?.audios
+                    ?.find((audio) => Boolean(audio?.audioUrl))
+                    ?.audioUrl?.trim() ?? "";
                 const progress = Math.min(
                   100,
                   Math.max(0, item.progress ?? item.process ?? 0),
@@ -133,7 +141,14 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
                     className="space-y-3 rounded-xl border border-[#e5e7eb] bg-white p-3"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="min-w-0 text-sm font-semibold text-[#0b0f14]">{term}</p>
+                      <div className="min-w-0 flex items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-[#0b0f14]">
+                          {term}
+                        </p>
+                        {audioUrl ? (
+                          <VocabAudioButton audioUrl={audioUrl} term={term} />
+                        ) : null}
+                      </div>
                       <span className="shrink-0 rounded-full border border-[#dbeafe] bg-[#eff6ff] px-2 py-0.5 text-[11px] font-semibold text-[#1d4ed8]">
                         {item.status || "NEW"}
                       </span>
@@ -180,6 +195,13 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
                       item.vocabulary?.term ||
                       item.vocabularyId ||
                       "--";
+                    const audioUrl =
+                      item.audios
+                        ?.find((audio) => Boolean(audio?.audioUrl))
+                        ?.audioUrl?.trim() ??
+                      item.vocabulary?.audios
+                        ?.find((audio) => Boolean(audio?.audioUrl))
+                        ?.audioUrl?.trim() ?? "";
                     const progress = Math.min(
                       100,
                       Math.max(0, item.progress ?? item.process ?? 0),
@@ -190,7 +212,14 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
                         key={item.id}
                         className="grid grid-cols-[minmax(0,_1.2fr)_180px_150px_140px_260px] gap-4 px-4 py-4 text-sm"
                       >
-                        <p className="truncate font-semibold text-[#0b0f14]">{term}</p>
+                        <div className="min-w-0 flex items-center gap-2">
+                          <p className="min-w-0 flex-1 truncate font-semibold text-[#0b0f14]">
+                            {term}
+                          </p>
+                          {audioUrl ? (
+                            <VocabAudioButton audioUrl={audioUrl} term={term} />
+                          ) : null}
+                        </div>
                         <p className="text-xs text-[#64748b]">
                           {item.createdAt
                             ? new Intl.DateTimeFormat("vi-VN", {

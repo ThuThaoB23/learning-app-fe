@@ -155,6 +155,7 @@ Trong đó `content` là danh sách object `T`.
 ### `UserVocabularyResponse`
 - `vocabularyId` (`uuid`)
 - `term` (`string | null`)
+- `audios` (`VocabularyAudioResponse[]`)
 - `status` (`NEW | LEARNING | MASTERED`)
 - `progress` (`number`, 0..100)
 - `lastReviewedAt` (`datetime | null`)
@@ -622,7 +623,7 @@ Query:
 - `page`, `size`, `sort`
 
 Response `200` (`Page<UserVocabularyResponse>`)
-Note: `UserVocabularyResponse` now includes `term`.
+Note: `UserVocabularyResponse` includes `term` and `audios`.
 
 ### `GET /me/vocab/contributions` (Auth)
 List vocabulary contributions submitted by current user.
@@ -733,12 +734,15 @@ Body (`SubmitTestSessionAnswersRequest`):
 ```
 
 Response `200` (`SubmitTestSessionAnswersResponse`)
-Note: Request phải có đáp án cho toàn bộ item `PENDING` trong session, không được trùng `itemId`.
+Note:
+- Không được trùng `itemId`.
+- Item `PENDING` không có trong `answers` sẽ được tính là trả lời sai.
 
 ### `POST /me/sessions/{sessionId}/complete` (Auth)
 Mark active session as completed.
 
 Response `200` (`TestSessionResponse`)
+Note: Item `PENDING` khi complete sẽ được chấm là `WRONG`.
 
 ### `POST /me/sessions/{sessionId}/abandon` (Auth)
 Mark active session as abandoned.
