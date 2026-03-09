@@ -16,6 +16,11 @@ export type FillMissingConfig = {
   missingIndexes: number[];
 };
 
+export type AudioPromptConfig = {
+  audioUrl?: string;
+  accent?: string;
+};
+
 export const toRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
 
@@ -343,6 +348,46 @@ export const splitFillMissingAnswer = (
   return missingIndexes.map((index) => normalized[index] || "");
 };
 
+export const extractAudioPromptConfig = (
+  payload: Record<string, unknown>,
+): AudioPromptConfig => {
+  const audioUrlCandidates = [
+    payload.audioUrl,
+    payload.audio,
+    getNested(payload, [
+      "question.audioUrl",
+      "question.audio",
+      "data.audioUrl",
+      "data.audio",
+      "meta.audioUrl",
+    ]),
+  ];
+
+  const accentCandidates = [
+    payload.accent,
+    payload.voice,
+    getNested(payload, [
+      "question.accent",
+      "question.voice",
+      "data.accent",
+      "data.voice",
+      "meta.accent",
+    ]),
+  ];
+
+  const audioUrl = audioUrlCandidates.find(
+    (candidate): candidate is string =>
+      typeof candidate === "string" && candidate.trim().length > 0,
+  )?.trim();
+
+  const accent = accentCandidates.find(
+    (candidate): candidate is string =>
+      typeof candidate === "string" && candidate.trim().length > 0,
+  )?.trim();
+
+  return { audioUrl, accent };
+};
+
 export const getQuestionTypeLabel = (
   questionType?: string | null,
   uiLanguage: "vi" | "en" = "vi",
@@ -355,6 +400,10 @@ export const getQuestionTypeLabel = (
     TRUE_FALSE: {
       vi: "Đúng / Sai",
       en: "True / False",
+    },
+    LISTEN_AND_CHOOSE: {
+      vi: "Nghe và chọn",
+      en: "Listen and choose",
     },
     FILL_MISSING_CHARS: {
       vi: "Điền ký tự còn thiếu",

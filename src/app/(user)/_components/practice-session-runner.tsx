@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import VocabAudioButton from "./vocab-audio-button";
 import type { TestItemResponse } from "@/lib/user-api";
 import {
+  extractAudioPromptConfig,
   extractExpectedFromPayload,
   extractOptions,
   formatExpectedAnswer,
@@ -59,9 +61,11 @@ export default function PracticeSessionRunner({
     () => extractOptions(payload, currentItem?.questionType),
     [payload, currentItem?.questionType],
   );
+  const audioPrompt = useMemo(() => extractAudioPromptConfig(payload), [payload]);
   const promptText = useMemo(() => pickText(payload), [payload]);
   const questionType = (currentItem?.questionType || "").toUpperCase();
   const isMultipleChoice = questionType === "MULTIPLE_CHOICE";
+  const isListenAndChoose = questionType === "LISTEN_AND_CHOOSE";
   const fillMissingConfig = useMemo(
     () => getFillMissingConfig(payload, currentItem?.questionType),
     [payload, currentItem?.questionType],
@@ -416,10 +420,43 @@ export default function PracticeSessionRunner({
                 })}
               </div>
             </div>
-          ) : options.length && isMultipleChoice ? (
-            <fieldset className="space-y-2">
-              <legend className="mb-2 text-sm font-semibold text-[#334155]">
-                Chọn 1 đáp án đúng
+          ) : options.length && (isMultipleChoice || isListenAndChoose) ? (
+            <fieldset className="space-y-3">
+              {isListenAndChoose ? (
+                <div className="rounded-2xl border border-[#dbeafe] bg-[linear-gradient(135deg,#eff6ff_0%,#f8fbff_100%)] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#1d4ed8]">
+                        Listen
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-[#334155]">
+                        Nghe audio rồi chọn từ đúng.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {audioPrompt.accent ? (
+                        <span className="rounded-full border border-[#bfdbfe] bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#1d4ed8]">
+                          {audioPrompt.accent}
+                        </span>
+                      ) : null}
+                      {audioPrompt.audioUrl ? (
+                        <VocabAudioButton
+                          audioUrl={audioPrompt.audioUrl}
+                          term={promptText !== "Hãy đọc câu hỏi và trả lời." ? promptText : null}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                  {!audioPrompt.audioUrl ? (
+                    <p className="mt-3 text-xs text-[#be123c]">
+                      Payload của câu `LISTEN_AND_CHOOSE` chưa có `audioUrl`.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <legend className="text-sm font-semibold text-[#334155]">
+                {isListenAndChoose ? "Chọn từ bạn nghe được" : "Chọn 1 đáp án đúng"}
               </legend>
               {options.map((option, index) => (
                 <label
@@ -427,7 +464,9 @@ export default function PracticeSessionRunner({
                   className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition ${
                     currentAnswer === option.value
                       ? "border-[#0b0f14] bg-[#0b0f14] text-white"
-                      : "border-[#e5e7eb] bg-white text-[#0b0f14] hover:border-[#0b0f14]"
+                      : isListenAndChoose
+                        ? "border-[#dbeafe] bg-white text-[#0b0f14] hover:border-[#1d4ed8]"
+                        : "border-[#e5e7eb] bg-white text-[#0b0f14] hover:border-[#0b0f14]"
                   }`}
                 >
                   <input

@@ -90,7 +90,7 @@ Fields:
 Fields:
 - `id` (UUID)
 - `vocabularyId` (UUID)
-- `audioUrl` (String)
+- `audioUrl` (String, URL public của object audio đã upload lên MinIO)
 - `accent` (String, nullable)
 - `position` (Integer, nullable)
 - `createdAt` (LocalDateTime)
@@ -98,7 +98,9 @@ Fields:
 
 Purpose:
 - Lưu nhiều audio phát âm cho một vocabulary
-- Dữ liệu hiện được tự động fetch từ `dictionaryapi.dev` cho vocabulary tiếng Anh
+- Dữ liệu hiện được tự động sinh từ TTS server nội bộ cho vocabulary tiếng Anh
+- File audio được tải về và lưu lại trên MinIO của hệ thống trước khi ghi `audioUrl` vào DB
+- Hệ thống cũng hỗ trợ user upload audio thủ công cho vocabulary đã duyệt khi nguồn ngoài không có sound
 
 ---
 
@@ -133,6 +135,21 @@ Fields:
 
 Enums:
 - `UserVocabStatus`: `NEW`, `LEARNING`, `MASTERED`
+
+---
+
+## UserFlashcardDeckHistory (`user_flashcard_deck_histories`)
+**Entity:** `com.learnapp.entities.UserFlashcardDeckHistory`
+
+Fields:
+- `id` (UUID)
+- `userId` (UUID)
+- `servedVocabularyIds` (JsonNode, JSON array of `userVocabularyId`)
+- `totalItems` (Integer)
+- `createdAt` (LocalDateTime)
+
+Purpose:
+- Lưu 2 deck flashcard gần nhất theo user để API `/me/vocab/flashcards` tránh lặp lại các từ vừa được trả ở các lần gọi liên tiếp, kể cả sau khi app restart.
 
 ---
 
@@ -182,7 +199,7 @@ Fields:
 - `createdAt` (LocalDateTime)
 
 Enums:
-- `QuestionType`: `MULTIPLE_CHOICE`, `TRUE_FALSE`, `FILL_MISSING_CHARS`, `TRANSLATE_TO_VI`, `TRANSLATE_TO_EN`, `ACTIVE_RECALL_FULL_WORD`, `CONTEXT_GAP`
+- `QuestionType`: `MULTIPLE_CHOICE`, `LISTEN_AND_CHOOSE`, `TRUE_FALSE`, `FILL_MISSING_CHARS`, `TRANSLATE_TO_VI`, `TRANSLATE_TO_EN`, `ACTIVE_RECALL_FULL_WORD`, `CONTEXT_GAP`
 - `TestItemStatus`: `PENDING`, `CORRECT`, `WRONG`, `SKIPPED`
 
 ---
@@ -194,4 +211,5 @@ Các object sau không phải JPA entity nhưng vừa được thêm để hỗ 
 - `com.learnapp.dto.VocabularyAudioResponse`
 - `com.learnapp.dto.VocabularyAudioBackfillResponse`
 - `com.learnapp.service.VocabularyAudioService`
-- `com.learnapp.config.DictionaryApiProperties`
+- `com.learnapp.service.VocabularyAudioStorageService`
+- `com.learnapp.config.TextToSpeechProperties`

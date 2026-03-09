@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import VocabAudioButton from "./vocab-audio-button";
 import type {
   FlashcardDeckBucket,
@@ -51,6 +51,7 @@ export default function MyVocabFlashCardDeck({
   const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [submittingCardId, setSubmittingCardId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const cards = deck?.items ?? [];
   const currentCard = cards[currentIndex];
@@ -58,11 +59,48 @@ export default function MyVocabFlashCardDeck({
   const statusForCard = (card: FlashcardItemResponse) =>
     localStatuses[card.userVocabularyId] || card.status || "NEW";
 
+  const stopAutoAudio = () => {
+    if (!audioRef.current) {
+      return;
+    }
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    audioRef.current = null;
+  };
+
+  const playAutoAudio = async (audioUrl: string) => {
+    stopAutoAudio();
+
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+    audio.onended = () => {
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+    };
+    audio.onerror = () => {
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+    };
+
+    try {
+      await audio.play();
+    } catch {
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
+    }
+  };
+
+  useEffect(() => () => stopAutoAudio(), []);
+
   const goToIndex = (index: number) => {
     if (!cards.length) {
       return;
     }
     const safeIndex = Math.min(cards.length - 1, Math.max(0, index));
+    stopAutoAudio();
     setCurrentIndex(safeIndex);
     setRevealed(false);
     setMessage(null);
@@ -98,6 +136,7 @@ export default function MyVocabFlashCardDeck({
         : "Đã lưu là đang học. Tiếp tục ôn thẻ kế tiếp.";
 
     if (currentIndex < cards.length - 1) {
+      stopAutoAudio();
       setCurrentIndex(currentIndex + 1);
       setRevealed(false);
     }
@@ -203,7 +242,17 @@ export default function MyVocabFlashCardDeck({
           <div className="mt-5" style={{ perspective: "1400px" }}>
             <button
               type="button"
-              onClick={() => setRevealed((prev) => !prev)}
+              onClick={() => {
+                const nextRevealed = !revealed;
+                setRevealed(nextRevealed);
+                if (nextRevealed && audioUrl) {
+                  void playAutoAudio(audioUrl);
+                  return;
+                }
+                if (!nextRevealed) {
+                  stopAutoAudio();
+                }
+              }}
               disabled={Boolean(submittingCardId)}
               className="block w-full rounded-[28px] text-left disabled:pointer-events-none"
               aria-label={revealed ? "Lật về mặt trước" : "Lật sang mặt sau"}
