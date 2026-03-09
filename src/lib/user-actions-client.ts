@@ -1,4 +1,5 @@
 import { getAuthHeader } from "@/lib/client-auth";
+import type { PageResponse, UserVocabularyResponse } from "@/lib/user-api";
 
 const API_BASE_URL =
   typeof window === "undefined"
@@ -199,6 +200,11 @@ type CreateTopicSessionInput = {
   totalItems?: number;
 };
 
+type CreateSelectedVocabularySessionInput = {
+  vocabularyIds: string[];
+  questionTypes: string[];
+};
+
 export const createTopicSession = async <TResponse = Record<string, unknown>>(
   input: CreateTopicSessionInput,
 ) => {
@@ -219,6 +225,29 @@ export const createTopicSession = async <TResponse = Record<string, unknown>>(
     {
       topicIds,
       totalItems,
+    },
+  );
+};
+
+export const createSelectedVocabularySession = async <
+  TResponse = Record<string, unknown>,
+>(
+  input: CreateSelectedVocabularySessionInput,
+) => {
+  const vocabularyIds = input.vocabularyIds
+    .map((item) => item.trim())
+    .filter((item, index, array) => item && array.indexOf(item) === index);
+  const questionTypes = input.questionTypes
+    .map((item) => item.trim().toUpperCase())
+    .filter((item, index, array) => item && array.indexOf(item) === index);
+
+  return request<TResponse>(
+    "/me/sessions/vocab",
+    "POST",
+    "Không thể tạo phiên từ danh sách từ đã chọn.",
+    {
+      vocabularyIds,
+      questionTypes,
     },
   );
 };
@@ -326,6 +355,53 @@ export const searchVocabClient = async (
         ok: false,
         message:
           data?.message ?? data?.error ?? "Không thể tìm từ vựng trong hệ thống.",
+      };
+    }
+
+    return { ok: true, data };
+  } catch {
+    return { ok: false, message: NETWORK_ERROR_MESSAGE };
+  }
+};
+
+export const fetchMyVocabClient = async (params?: {
+  query?: string;
+  status?: string;
+  page?: number;
+  size?: number;
+  sort?: string;
+}): Promise<QueryResult<PageResponse<UserVocabularyResponse>>> => {
+  const authHeader = getAuthHeader();
+  if (!authHeader) {
+    return { ok: false, message: UNAUTHORIZED_MESSAGE };
+  }
+
+  const query = new URLSearchParams();
+  query.set("page", String(Math.max(0, params?.page ?? 0)));
+  query.set("size", String(Math.min(100, Math.max(1, params?.size ?? 12))));
+  query.set("sort", params?.sort?.trim() || "updatedAt,desc");
+  if (params?.status?.trim()) {
+    query.set("status", params.status.trim());
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/me/vocab?${query.toString()}`, {
+      method: "GET",
+      headers: {
+        Authorization: authHeader,
+      },
+      cache: "no-store",
+    });
+
+    const data = (await response.json().catch(() => null)) as
+      | (PageResponse<UserVocabularyResponse> & { message?: string; error?: string })
+      | null;
+
+    if (!response.ok || !data) {
+      return {
+        ok: false,
+        message:
+          data?.message ?? data?.error ?? "Không thể tải danh sách từ cá nhân.",
       };
     }
 

@@ -32,6 +32,23 @@ const toStatusLabel = (value?: string | null) => {
   return "Đang làm";
 };
 
+const toSessionTypeLabel = (value?: string | null) => {
+  const normalized = (value || "DAILY").toUpperCase();
+  if (normalized === "SET_PRACTICE") {
+    return "Tự chọn";
+  }
+  if (normalized === "CUSTOM") {
+    return "Theo chủ đề";
+  }
+  if (normalized === "REVIEW") {
+    return "Ôn tập";
+  }
+  if (normalized === "NEW_WORDS") {
+    return "Từ mới";
+  }
+  return "Daily";
+};
+
 export default function RecentSessionsList() {
   const [loading, setLoading] = useState(true);
   const [sessions, setSessions] = useState<SessionView[]>([]);
@@ -87,7 +104,7 @@ export default function RecentSessionsList() {
             >
               <div>
                 <p className="text-sm font-semibold text-[#0b0f14]">
-                  {session.type || "DAILY"} • {toStatusLabel(session.status)}
+                  {toSessionTypeLabel(session.type)} • {toStatusLabel(session.status)}
                 </p>
                 <p className="text-xs text-[#64748b]">
                   {session.startedAt
