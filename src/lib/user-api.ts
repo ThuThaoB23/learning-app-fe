@@ -84,6 +84,38 @@ export type UserVocabularyResponse = {
   vocabulary?: VocabularyResponse | null;
 };
 
+export type FlashcardDeckBucket = "DUE" | "WEAK" | "NEW" | "REVIEW";
+
+export type FlashcardDeckGroupResponse = {
+  bucket: FlashcardDeckBucket;
+  count: number;
+};
+
+export type FlashcardItemResponse = {
+  userVocabularyId: string;
+  vocabularyId: string;
+  bucket: FlashcardDeckBucket;
+  term: string;
+  definition: string;
+  definitionVi?: string | null;
+  examples?: string[] | null;
+  audios?: VocabularyAudioResponse[] | null;
+  phonetic?: string | null;
+  partOfSpeech?: string | null;
+  language?: string | null;
+  status?: "NEW" | "LEARNING" | "MASTERED" | string | null;
+  progress?: number | null;
+  lastReviewedAt?: string | null;
+  nextDueAt?: string | null;
+};
+
+export type FlashcardDeckResponse = {
+  requestedLimit: number;
+  totalItems: number;
+  groups: FlashcardDeckGroupResponse[];
+  items: FlashcardItemResponse[];
+};
+
 export type VocabularyContributionResponse = {
   id: string;
   contributorUserId?: string | null;
@@ -149,6 +181,10 @@ const getAuthorization = async () => {
   return `${decodeURIComponent(tokenType)} ${decodeURIComponent(accessToken)}`;
 };
 
+type AuthFetchResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; message: string; errorCode?: string; status: number };
+
 const authFetchJson = async <T>(path: string): Promise<T | null> => {
   const authorization = await getAuthorization();
   if (!authorization) {
@@ -170,6 +206,49 @@ const authFetchJson = async <T>(path: string): Promise<T | null> => {
     return (await response.json()) as T;
   } catch {
     return null;
+  }
+};
+
+const authFetchResult = async <T>(path: string): Promise<AuthFetchResult<T>> => {
+  const authorization = await getAuthorization();
+  if (!authorization) {
+    return {
+      ok: false,
+      message: "Bạn chưa đăng nhập hoặc phiên đã hết hạn.",
+      status: 401,
+      errorCode: "UNAUTHORIZED",
+    };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: {
+        Authorization: authorization,
+      },
+      cache: "no-store",
+    });
+
+    const data = (await response.json().catch(() => null)) as
+      | (T & { message?: string; error?: string; errorCode?: string })
+      | null;
+
+    if (!response.ok || !data) {
+      return {
+        ok: false,
+        message: data?.message ?? data?.error ?? "Không thể tải dữ liệu.",
+        errorCode: data?.errorCode,
+        status: response.status,
+      };
+    }
+
+    return { ok: true, data };
+  } catch {
+    return {
+      ok: false,
+      message: "Không thể kết nối máy chủ. Vui lòng thử lại.",
+      status: 0,
+      errorCode: "NETWORK_ERROR",
+    };
   }
 };
 
@@ -248,6 +327,17 @@ export const fetchMyVocab = (params?: {
   return authFetchJson<PageResponse<UserVocabularyResponse>>(
     `/me/vocab?${query.toString()}`,
   );
+};
+
+export const fetchMyVocabFlashcards = (params?: { limit?: number }) => {
+  const query = new URLSearchParams();
+  const limit =
+    typeof params?.limit === "number" && Number.isFinite(params.limit)
+      ? Math.min(100, Math.max(1, Math.floor(params.limit)))
+      : 20;
+  query.set("limit", String(limit));
+
+  return authFetchResult<FlashcardDeckResponse>(`/me/vocab/flashcards?${query.toString()}`);
 };
 
 export const fetchMyVocabContributions = (params?: {

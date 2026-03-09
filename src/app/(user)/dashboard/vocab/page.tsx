@@ -93,6 +93,12 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
           </form>
           <div className="flex flex-wrap items-center gap-2">
             <Link
+              href="/dashboard/vocab/flashcards"
+              className="rounded-full border border-[#cbd5e1] bg-white px-4 py-2 text-sm font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]"
+            >
+              Mở Flash Card
+            </Link>
+            <Link
               href="/dashboard/vocab/new"
               className="rounded-full bg-[#0b0f14] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#111827]"
             >
