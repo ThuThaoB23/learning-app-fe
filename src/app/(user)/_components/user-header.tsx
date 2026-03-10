@@ -20,6 +20,7 @@ const routeDescriptions: Record<string, string> = {
   "/dashboard/vocab": "Theo dõi từ đã lưu",
   "/dashboard/topics": "Lộ trình theo chủ đề",
   "/dashboard/practice": "Luyện tập hằng ngày",
+  "/dashboard/feedback": "Góp ý và báo lỗi",
   "/dashboard/settings": "Tùy chỉnh tài khoản",
 };
 

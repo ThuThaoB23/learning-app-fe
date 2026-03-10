@@ -1,5 +1,5 @@
 import { getAuthHeader } from "@/lib/client-auth";
-import type { PageResponse, UserVocabularyResponse } from "@/lib/user-api";
+import type { PageResponse, UserFeedbackResponse, UserVocabularyResponse } from "@/lib/user-api";
 
 const API_BASE_URL =
   typeof window === "undefined"
@@ -46,6 +46,19 @@ type UpdateProfileInput = {
 type UpdateUserVocabularyInput = {
   status?: "NEW" | "LEARNING" | "MASTERED";
   progress?: number;
+};
+
+type SubmitUserFeedbackInput = {
+  category: string;
+  title?: string;
+  message: string;
+  targetType?: string;
+  targetLabelSnapshot?: string;
+  sourceScreen?: string;
+  appVersion?: string;
+  deviceInfo?: string;
+  locale?: string;
+  attachments?: File[];
 };
 
 const UNAUTHORIZED_MESSAGE = "Bạn chưa đăng nhập hoặc phiên đã hết hạn.";
@@ -185,6 +198,58 @@ export const removeFromMyVocab = async (vocabularyId: string) => {
     "DELETE",
     "Không thể xóa từ khỏi danh sách cá nhân.",
   );
+};
+
+export const submitUserFeedback = async <TResponse = UserFeedbackResponse>(
+  input: SubmitUserFeedbackInput,
+) => {
+  const authHeader = getAuthHeader();
+  if (!authHeader) {
+    return { ok: false as const, message: UNAUTHORIZED_MESSAGE };
+  }
+
+  const formData = new FormData();
+  formData.append("category", input.category.trim());
+  formData.append("message", input.message.trim());
+
+  if (input.title?.trim()) {
+    formData.append("title", input.title.trim());
+  }
+  if (input.targetType?.trim()) {
+    formData.append("targetType", input.targetType.trim());
+  }
+  if (input.targetLabelSnapshot?.trim()) {
+    formData.append("targetLabelSnapshot", input.targetLabelSnapshot.trim());
+  }
+  if (input.sourceScreen?.trim()) {
+    formData.append("sourceScreen", input.sourceScreen.trim());
+  }
+  if (input.appVersion?.trim()) {
+    formData.append("appVersion", input.appVersion.trim());
+  }
+  if (input.deviceInfo?.trim()) {
+    formData.append("deviceInfo", input.deviceInfo.trim());
+  }
+  if (input.locale?.trim()) {
+    formData.append("locale", input.locale.trim());
+  }
+  for (const file of input.attachments?.slice(0, 3) ?? []) {
+    formData.append("attachments", file);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/feedback`, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader,
+      },
+      body: formData,
+    });
+
+    return await parseMutationResponse<TResponse>(response, "Không thể gửi feedback.");
+  } catch {
+    return { ok: false as const, message: NETWORK_ERROR_MESSAGE };
+  }
 };
 
 export const createDailySession = async <TResponse = Record<string, unknown>>() => {

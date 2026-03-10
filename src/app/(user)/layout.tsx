@@ -19,6 +19,7 @@ const navItems = [
   { label: "Từ vựng của tôi", href: "/dashboard/vocab" },
   { label: "Chủ đề", href: "/dashboard/topics" },
   { label: "Luyện tập", href: "/dashboard/practice" },
+  { label: "Feedback", href: "/dashboard/feedback" },
   { label: "Cài đặt", href: "/dashboard/settings" },
 ];
 

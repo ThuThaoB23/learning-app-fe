@@ -64,6 +64,24 @@ const getNavIcon = (href: string): JSX.Element => {
           />
         </svg>
       );
+    case "/admin/feedback":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={iconClassName} aria-hidden>
+          <path
+            d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-5l-4 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M8 10h8M8 13h5"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
     case "/admin/reviews":
       return (
         <svg viewBox="0 0 24 24" fill="none" className={iconClassName} aria-hidden>

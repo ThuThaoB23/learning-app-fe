@@ -23,6 +23,7 @@ const headerDescriptions: Record<string, string> = {
   "/admin/users": "Quản lý tài khoản",
   "/admin/topics": "Danh mục chủ đề",
   "/admin/vocab": "Kho dữ liệu từ vựng",
+  "/admin/feedback": "Hộp thư người dùng",
   "/admin/reviews": "Hàng đợi duyệt",
   "/admin/activity-logs": "Lịch sử thao tác",
   "/admin/reports": "Báo cáo vận hành",

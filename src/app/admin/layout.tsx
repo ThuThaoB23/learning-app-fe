@@ -18,6 +18,7 @@ const navItems = [
   { label: "Người dùng", href: "/admin/users" },
   { label: "Chủ đề", href: "/admin/topics" },
   { label: "Từ vựng", href: "/admin/vocab" },
+  { label: "Feedback", href: "/admin/feedback" },
   { label: "Duyệt đóng góp", href: "/admin/reviews" },
   { label: "Nhật ký hoạt động", href: "/admin/activity-logs" },
   { label: "Báo cáo", href: "/admin/reports" },

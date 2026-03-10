@@ -78,6 +78,18 @@ const getNavIcon = (href: string) => {
           />
         </svg>
       );
+    case "/dashboard/feedback":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={iconClassName} aria-hidden>
+          <path
+            d="M7 10h10M7 14h6m-7 6 3.2-3H18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2v3Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
     case "/dashboard/settings":
       return (
         <svg viewBox="0 0 24 24" fill="none" className={iconClassName} aria-hidden>

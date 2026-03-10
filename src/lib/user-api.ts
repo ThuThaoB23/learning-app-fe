@@ -145,6 +145,40 @@ export type VocabularyContributionResponse = {
   updatedAt?: string | null;
 };
 
+export type UserFeedbackAttachmentResponse = {
+  id: string;
+  fileName?: string | null;
+  contentType?: string | null;
+  fileSize?: number | null;
+  position?: number | null;
+  fileUrl?: string | null;
+};
+
+export type UserFeedbackResponse = {
+  id: string;
+  category?: "BUG_REPORT" | "CONTENT_ISSUE" | "FEATURE_REQUEST" | "UX_FEEDBACK" | "GENERAL" | string | null;
+  title?: string | null;
+  message?: string | null;
+  status?: "NEW" | "READ" | "ARCHIVED" | string | null;
+  targetType?:
+    | "APP"
+    | "VOCABULARY"
+    | "TOPIC"
+    | "TEST_SESSION"
+    | "VOCABULARY_AUDIO"
+    | "OTHER"
+    | string
+    | null;
+  targetLabelSnapshot?: string | null;
+  sourceScreen?: string | null;
+  appVersion?: string | null;
+  deviceInfo?: string | null;
+  locale?: string | null;
+  attachments?: UserFeedbackAttachmentResponse[] | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+};
+
 export type TestItemResponse = {
   id: string;
   position?: number | null;
@@ -342,6 +376,21 @@ export const fetchMyVocabFlashcards = (params?: { limit?: number }) => {
   query.set("limit", String(limit));
 
   return authFetchResult<FlashcardDeckResponse>(`/me/vocab/flashcards?${query.toString()}`);
+};
+
+export const fetchMyFeedback = (params?: {
+  page?: number;
+  size?: number;
+  sort?: string;
+}) => {
+  const query = new URLSearchParams();
+  query.set("page", String(params?.page ?? 0));
+  query.set("size", String(params?.size ?? 20));
+  if (params?.sort) {
+    query.set("sort", params.sort);
+  }
+
+  return authFetchJson<PageResponse<UserFeedbackResponse>>(`/me/feedback?${query.toString()}`);
 };
 
 export const fetchMyVocabContributions = (params?: {
