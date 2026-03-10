@@ -260,73 +260,101 @@ export default async function MyVocabPage({ searchParams }: MyVocabPageProps) {
         )}
       </section>
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-3 text-sm shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
-        <p className="text-[#64748b]">
-          Trang <span className="font-semibold text-[#0b0f14]">{currentPage + 1}</span> /{" "}
-          <span className="font-semibold text-[#0b0f14]">{totalPages}</span>
-        </p>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Link
-            href={buildHref(Math.max(0, currentPage - 1))}
-            aria-disabled={currentPage === 0}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-              currentPage === 0
-                ? "pointer-events-none border-[#e5e7eb] text-[#94a3b8]"
-                : "border-[#e5e7eb] text-[#0b0f14] hover:border-[#0b0f14]"
-            }`}
-          >
-            Trước
-          </Link>
+      <section className="rounded-2xl border border-white/70 bg-white/90 px-4 py-3 text-sm shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[#64748b]">
+            Trang <span className="font-semibold text-[#0b0f14]">{currentPage + 1}</span> /{" "}
+            <span className="font-semibold text-[#0b0f14]">{totalPages}</span>
+          </p>
 
-          {rangeStart > 0 ? (
-            <>
-              <Link
-                href={buildHref(0)}
-                className="rounded-full border border-[#e5e7eb] px-3 py-1 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]"
-              >
-                1
-              </Link>
-              <span className="px-1 text-xs text-[#94a3b8]">…</span>
-            </>
-          ) : null}
-
-          {pageRange.map((pageIndex) => (
+          <div className="grid grid-cols-2 gap-2 sm:hidden">
             <Link
-              key={pageIndex}
-              href={buildHref(pageIndex)}
-              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                pageIndex === currentPage
-                  ? "border-[#0b0f14] bg-[#0b0f14] text-white"
+              href={buildHref(Math.max(0, currentPage - 1))}
+              aria-disabled={currentPage === 0}
+              className={`flex items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                currentPage === 0
+                  ? "pointer-events-none border-[#e5e7eb] text-[#94a3b8]"
                   : "border-[#e5e7eb] text-[#0b0f14] hover:border-[#0b0f14]"
               }`}
             >
-              {pageIndex + 1}
+              Trước
             </Link>
-          ))}
+            <Link
+              href={buildHref(Math.min(totalPages - 1, currentPage + 1))}
+              aria-disabled={currentPage >= totalPages - 1}
+              className={`flex items-center justify-center rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                currentPage >= totalPages - 1
+                  ? "pointer-events-none border-[#e5e7eb] text-[#94a3b8]"
+                  : "border-[#e5e7eb] text-[#0b0f14] hover:border-[#0b0f14]"
+              }`}
+            >
+              Sau
+            </Link>
+          </div>
 
-          {rangeEnd < totalPages - 1 ? (
-            <>
-              <span className="px-1 text-xs text-[#94a3b8]">…</span>
+          <div className="hidden flex-wrap items-center justify-end gap-2 sm:flex">
+            <Link
+              href={buildHref(Math.max(0, currentPage - 1))}
+              aria-disabled={currentPage === 0}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                currentPage === 0
+                  ? "pointer-events-none border-[#e5e7eb] text-[#94a3b8]"
+                  : "border-[#e5e7eb] text-[#0b0f14] hover:border-[#0b0f14]"
+              }`}
+            >
+              Trước
+            </Link>
+
+            {rangeStart > 0 ? (
+              <>
+                <Link
+                  href={buildHref(0)}
+                  className="rounded-full border border-[#e5e7eb] px-3 py-1 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]"
+                >
+                  1
+                </Link>
+                <span className="px-1 text-xs text-[#94a3b8]">…</span>
+              </>
+            ) : null}
+
+            {pageRange.map((pageIndex) => (
               <Link
-                href={buildHref(totalPages - 1)}
-                className="rounded-full border border-[#e5e7eb] px-3 py-1 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]"
+                key={pageIndex}
+                href={buildHref(pageIndex)}
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                  pageIndex === currentPage
+                    ? "border-[#0b0f14] bg-[#0b0f14] text-white"
+                    : "border-[#e5e7eb] text-[#0b0f14] hover:border-[#0b0f14]"
+                }`}
               >
-                {totalPages}
+                {pageIndex + 1}
               </Link>
-            </>
-          ) : null}
+            ))}
 
-          <Link
-            href={buildHref(Math.min(totalPages - 1, currentPage + 1))}
-            aria-disabled={currentPage >= totalPages - 1}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-              currentPage >= totalPages - 1
-                ? "pointer-events-none border-[#e5e7eb] text-[#94a3b8]"
-                : "border-[#e5e7eb] text-[#0b0f14] hover:border-[#0b0f14]"
-            }`}
-          >
-            Sau
-          </Link>
+            {rangeEnd < totalPages - 1 ? (
+              <>
+                <span className="px-1 text-xs text-[#94a3b8]">…</span>
+                <Link
+                  href={buildHref(totalPages - 1)}
+                  className="rounded-full border border-[#e5e7eb] px-3 py-1 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14]"
+                >
+                  {totalPages}
+                </Link>
+              </>
+            ) : null}
+
+            <Link
+              href={buildHref(Math.min(totalPages - 1, currentPage + 1))}
+              aria-disabled={currentPage >= totalPages - 1}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                currentPage >= totalPages - 1
+                  ? "pointer-events-none border-[#e5e7eb] text-[#94a3b8]"
+                  : "border-[#e5e7eb] text-[#0b0f14] hover:border-[#0b0f14]"
+              }`}
+            >
+              Sau
+            </Link>
+          </div>
         </div>
       </section>
     </div>
