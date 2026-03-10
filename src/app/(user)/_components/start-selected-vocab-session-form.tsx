@@ -35,12 +35,35 @@ type SelectedVocabularySessionData = {
   id?: string;
 };
 
+type TopicOption = {
+  id: string;
+  name?: string | null;
+  slug?: string | null;
+  status?: string | null;
+};
+
+type StartSelectedVocabSessionFormProps = {
+  topics: TopicOption[];
+};
+
 const STATUS_FILTERS = [
   { id: "ALL", label: "Tất cả" },
   { id: "NEW", label: "Mới" },
   { id: "LEARNING", label: "Đang học" },
   { id: "MASTERED", label: "Đã nhớ" },
 ] as const;
+
+const SORT_OPTIONS = [
+  { id: "updatedAt,desc", label: "Mới cập nhật" },
+  { id: "progress,asc", label: "Tiến độ tăng dần" },
+  { id: "progress,desc", label: "Tiến độ giảm dần" },
+] as const;
+
+const FILTER_CONTROL_CLASSNAME =
+  "h-12 w-full rounded-2xl border border-[#d1d5db] bg-white px-4 text-sm font-medium normal-case tracking-normal text-[#0b0f14] outline-none transition focus:border-[#0b0f14]";
+
+const FILTER_CHIP_CLASSNAME =
+  "inline-flex h-12 items-center justify-center rounded-2xl border px-4 text-sm font-semibold transition";
 
 const QUESTION_TYPE_OPTIONS = [
   {
@@ -84,6 +107,9 @@ const resolveDefinition = (item: UserVocabularyItem) =>
 
 const normalizeSearchValue = (value?: string | null) => value?.trim().toLowerCase() || "";
 
+const resolveTopicLabel = (topic: TopicOption) =>
+  topic.name?.trim() || topic.slug?.trim() || topic.id;
+
 const matchesQuery = (item: UserVocabularyItem, query: string) => {
   if (!query) {
     return true;
@@ -111,7 +137,20 @@ const resolveStatusLabel = (item: UserVocabularyItem) => {
   return "Mới";
 };
 
-export default function StartSelectedVocabSessionForm() {
+const resolveProgressValue = (item: UserVocabularyItem) => {
+  const rawValue =
+    typeof item.progress === "number"
+      ? item.progress
+      : typeof item.process === "number"
+        ? item.process
+        : 0;
+
+  return Math.max(0, Math.min(100, Math.round(rawValue)));
+};
+
+export default function StartSelectedVocabSessionForm({
+  topics,
+}: StartSelectedVocabSessionFormProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -121,6 +160,9 @@ export default function StartSelectedVocabSessionForm() {
   );
   const [statusFilter, setStatusFilter] =
     useState<(typeof STATUS_FILTERS)[number]["id"]>("ALL");
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+  const [selectedSort, setSelectedSort] =
+    useState<(typeof SORT_OPTIONS)[number]["id"]>("updatedAt,desc");
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<UserVocabularyItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<UserVocabularyItem[] | null>(null);
@@ -135,6 +177,17 @@ export default function StartSelectedVocabSessionForm() {
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const availableTopics = useMemo(
+    () => topics.filter((topic) => (topic.status || "ACTIVE").toUpperCase() !== "INACTIVE"),
+    [topics],
+  );
+  const selectedTopicLabel = useMemo(
+    () => {
+      const selectedTopic = availableTopics.find((topic) => topic.id === selectedTopicId);
+      return selectedTopic ? resolveTopicLabel(selectedTopic) : "";
+    },
+    [availableTopics, selectedTopicId],
+  );
 
   useEffect(() => {
     if (normalizedQuery) {
@@ -150,9 +203,10 @@ export default function StartSelectedVocabSessionForm() {
 
       const result = await fetchMyVocabClient({
         status: statusFilter === "ALL" ? undefined : statusFilter,
+        topicId: selectedTopicId || undefined,
         page,
         size: PAGE_SIZE,
-        sort: "updatedAt,desc",
+        sort: selectedSort,
       });
 
       if (!active) {
@@ -178,7 +232,7 @@ export default function StartSelectedVocabSessionForm() {
     return () => {
       active = false;
     };
-  }, [normalizedQuery, page, statusFilter]);
+  }, [normalizedQuery, page, selectedSort, selectedTopicId, statusFilter]);
 
   useEffect(() => {
     if (!normalizedQuery) {
@@ -193,9 +247,10 @@ export default function StartSelectedVocabSessionForm() {
 
       const firstPage = await fetchMyVocabClient({
         status: statusFilter === "ALL" ? undefined : statusFilter,
+        topicId: selectedTopicId || undefined,
         page: 0,
         size: 100,
-        sort: "updatedAt,desc",
+        sort: selectedSort,
       });
 
       if (!active) {
@@ -222,9 +277,10 @@ export default function StartSelectedVocabSessionForm() {
         remainingPageIndexes.map((pageIndex) =>
           fetchMyVocabClient({
             status: statusFilter === "ALL" ? undefined : statusFilter,
+            topicId: selectedTopicId || undefined,
             page: pageIndex,
             size: 100,
-            sort: "updatedAt,desc",
+            sort: selectedSort,
           }),
         ),
       );
@@ -261,7 +317,7 @@ export default function StartSelectedVocabSessionForm() {
     return () => {
       active = false;
     };
-  }, [normalizedQuery, statusFilter]);
+  }, [normalizedQuery, selectedSort, selectedTopicId, statusFilter]);
 
   const visibleItems = useMemo(() => {
     if (!filteredItems) {
@@ -384,21 +440,62 @@ export default function StartSelectedVocabSessionForm() {
     <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,_1fr)_320px]">
       <section className="rounded-3xl border border-white/70 bg-white/90 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
         <div className="flex flex-col gap-3 border-b border-[#e2e8f0] pb-4 md:flex-row md:items-end md:justify-between">
-          <label className="block flex-1 space-y-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">
-            Chọn từ
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setPage(0);
-              }}
-              placeholder="Nhập term hoặc nghĩa..."
-              className="w-full rounded-2xl border border-[#d1d5db] bg-white px-4 py-3 text-sm font-medium normal-case tracking-normal text-[#0b0f14] outline-none transition focus:border-[#0b0f14]"
-            />
-          </label>
+          <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,_1fr)_220px_220px]">
+            <label className="block space-y-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">
+              Chọn từ
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setPage(0);
+                }}
+                placeholder="Nhập term hoặc nghĩa..."
+                className={FILTER_CONTROL_CLASSNAME}
+              />
+            </label>
 
-          <div className="flex flex-wrap items-center gap-2">
+            <label className="block space-y-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">
+              Chủ đề
+              <select
+                value={selectedTopicId}
+                onChange={(event) => {
+                  setSelectedTopicId(event.target.value);
+                  setPage(0);
+                }}
+                className={FILTER_CONTROL_CLASSNAME}
+              >
+                <option value="">Tất cả chủ đề</option>
+                {availableTopics.map((topic) => (
+                  <option key={topic.id} value={topic.id}>
+                    {resolveTopicLabel(topic)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block space-y-1 text-xs font-semibold uppercase tracking-[0.14em] text-[#64748b]">
+              Sắp xếp
+              <select
+                value={selectedSort}
+                onChange={(event) => {
+                  setSelectedSort(
+                    event.target.value as (typeof SORT_OPTIONS)[number]["id"],
+                  );
+                  setPage(0);
+                }}
+                className={FILTER_CONTROL_CLASSNAME}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
             {STATUS_FILTERS.map((item) => (
               <button
                 key={item.id}
@@ -407,7 +504,7 @@ export default function StartSelectedVocabSessionForm() {
                   setStatusFilter(item.id);
                   setPage(0);
                 }}
-                className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                className={`w-full sm:w-auto ${FILTER_CHIP_CLASSNAME} ${
                   statusFilter === item.id
                     ? "border-[#0b0f14] bg-[#0b0f14] text-white"
                     : "border-[#cbd5e1] bg-white text-[#475569] hover:border-[#0b0f14]"
@@ -419,15 +516,20 @@ export default function StartSelectedVocabSessionForm() {
           </div>
         </div>
 
-        <div className="mt-4 flex items-center justify-between gap-3">
-          <p className="text-sm text-[#64748b]">
-            {loading ? "Đang tải danh sách..." : `Tìm thấy ${totalElements} từ phù hợp`}
-          </p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-[#64748b]">
+            <p>{loading ? "Đang tải danh sách..." : `Tìm thấy ${totalElements} từ phù hợp`}</p>
+            {selectedTopicId ? (
+              <span className="rounded-full border border-[#e2e8f0] bg-white px-3 py-1 text-xs font-semibold text-[#475569]">
+                Topic: {selectedTopicLabel || selectedTopicId}
+              </span>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={toggleVisibleSelection}
             disabled={loading || visibleSelectableItems.length === 0}
-            className="rounded-full border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-2xl border border-[#cbd5e1] bg-white px-4 py-3 text-sm font-semibold text-[#0b0f14] transition hover:border-[#0b0f14] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:rounded-full sm:px-3 sm:py-1.5 sm:text-xs"
           >
             {allVisibleSelected ? "Bỏ chọn trang này" : "Chọn trang này"}
           </button>
@@ -451,74 +553,153 @@ export default function StartSelectedVocabSessionForm() {
                 : "Bạn chưa có từ nào trong danh sách cá nhân."}
             </div>
           ) : (
-            <div className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white">
-              <div className="grid grid-cols-[auto_minmax(0,_1fr)_auto] gap-3 border-b border-[#e2e8f0] bg-[#f8fafc] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#64748b]">
-                <span>Chọn</span>
-                <span>Từ vựng</span>
-                <span>Trạng thái</span>
-              </div>
-
-              <div className="divide-y divide-[#e2e8f0]">
+            <div className="space-y-3">
+              <div className="divide-y divide-[#e2e8f0] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white md:hidden">
                 {visibleItems.map((item) => {
                   const vocabularyId = resolveVocabularyId(item);
                   const term = resolveTerm(item);
                   const definition = resolveDefinition(item);
                   const checked = Boolean(selectedVocab[vocabularyId]);
                   const statusLabel = resolveStatusLabel(item);
+                  const progressValue = resolveProgressValue(item);
 
                   return (
                     <label
-                      key={item.id}
-                      className={`grid cursor-pointer grid-cols-[auto_minmax(0,_1fr)_auto] items-center gap-3 px-4 py-3 transition ${
-                        checked ? "bg-[#f8fafc]" : "bg-white hover:bg-[#fcfcfd]"
+                      key={`mobile-${item.id}`}
+                      className={`block cursor-pointer px-4 py-4 transition ${
+                        checked ? "bg-[#f8fafc]" : "bg-white"
                       }`}
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-[#0b0f14]">
+                              {term}
+                            </p>
+                            {checked ? (
+                              <span className="rounded-full bg-[#0f172a] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
+                                Chọn
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-sm text-[#64748b] line-clamp-2">{definition}</p>
+                        </div>
+
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleVocabulary(item)}
                           disabled={!vocabularyId}
-                          className="h-4 w-4 rounded border-[#cbd5e1] text-[#0b0f14] focus:ring-[#0b0f14]"
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#cbd5e1] text-[#0b0f14] focus:ring-[#0b0f14]"
                         />
                       </div>
 
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-semibold text-[#0b0f14]">
-                            {term}
-                          </p>
-                          {checked ? (
-                            <span className="rounded-full bg-[#0f172a] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
-                              Chọn
-                            </span>
-                          ) : null}
+                      <div className="mt-3 grid grid-cols-[minmax(0,_1fr)_auto] items-center gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#64748b]">
+                            <span>Tiến độ</span>
+                            <span>{progressValue}%</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
+                            <div
+                              className="h-full rounded-full bg-[#0f172a] transition-[width]"
+                              style={{ width: `${progressValue}%` }}
+                            />
+                          </div>
                         </div>
-                        <p className="mt-0.5 truncate text-sm text-[#64748b]">{definition}</p>
-                      </div>
 
-                      <span className="text-xs font-medium text-[#64748b]">
-                        {statusLabel}
-                      </span>
+                        <span className="rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-2.5 py-1 text-center text-[11px] font-semibold text-[#475569]">
+                          {statusLabel}
+                        </span>
+                      </div>
                     </label>
                   );
                 })}
+              </div>
+
+              <div className="hidden overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white md:block">
+                <div className="grid grid-cols-[42px_minmax(0,_1.45fr)_minmax(112px,_0.9fr)_minmax(104px,_0.75fr)] gap-4 border-b border-[#e2e8f0] bg-[#f8fafc] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#64748b]">
+                  <span className="text-center">Chọn</span>
+                  <span>Từ vựng</span>
+                  <span className="text-center">Tiến độ</span>
+                  <span className="text-center">Trạng thái</span>
+                </div>
+
+                <div className="divide-y divide-[#e2e8f0]">
+                  {visibleItems.map((item) => {
+                    const vocabularyId = resolveVocabularyId(item);
+                    const term = resolveTerm(item);
+                    const definition = resolveDefinition(item);
+                    const checked = Boolean(selectedVocab[vocabularyId]);
+                    const statusLabel = resolveStatusLabel(item);
+                    const progressValue = resolveProgressValue(item);
+
+                    return (
+                      <label
+                        key={item.id}
+                        className={`grid grid-cols-[42px_minmax(0,_1.45fr)_minmax(112px,_0.9fr)_minmax(104px,_0.75fr)] items-center gap-4 px-4 py-3 transition ${
+                          checked ? "bg-[#f8fafc]" : "bg-white hover:bg-[#fcfcfd]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-center">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleVocabulary(item)}
+                            disabled={!vocabularyId}
+                            className="h-4 w-4 rounded border-[#cbd5e1] text-[#0b0f14] focus:ring-[#0b0f14]"
+                          />
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-[#0b0f14]">
+                              {term}
+                            </p>
+                            {checked ? (
+                              <span className="rounded-full bg-[#0f172a] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
+                                Chọn
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-0.5 truncate text-sm text-[#64748b]">{definition}</p>
+                        </div>
+
+                        <div className="w-full justify-self-center space-y-1">
+                          <div className="h-2 overflow-hidden rounded-full bg-[#e2e8f0]">
+                            <div
+                              className="h-full rounded-full bg-[#0f172a] transition-[width]"
+                              style={{ width: `${progressValue}%` }}
+                            />
+                          </div>
+                          <p className="text-center text-xs font-medium text-[#64748b]">
+                            {progressValue}%
+                          </p>
+                        </div>
+
+                        <span className="justify-self-center rounded-full border border-[#e2e8f0] bg-[#f8fafc] px-2.5 py-1 text-center text-[11px] font-semibold text-[#475569]">
+                          {statusLabel}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#e2e8f0] pt-4">
+        <div className="mt-5 flex flex-col gap-3 border-t border-[#e2e8f0] pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <p className="text-sm text-[#64748b]">
             Trang <span className="font-semibold text-[#0b0f14]">{page + 1}</span> /{" "}
             <span className="font-semibold text-[#0b0f14]">{totalPages}</span>
           </p>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
             <button
               type="button"
               onClick={() => setPage((prev) => Math.max(0, prev - 1))}
               disabled={loading || page === 0}
-              className="rounded-full border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl border border-[#cbd5e1] bg-white px-4 py-3 text-sm font-semibold text-[#0b0f14] transition hover:border-[#0b0f14] disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-xs"
             >
               Trước
             </button>
@@ -526,7 +707,7 @@ export default function StartSelectedVocabSessionForm() {
               type="button"
               onClick={() => setPage((prev) => Math.min(totalPages - 1, prev + 1))}
               disabled={loading || page >= totalPages - 1}
-              className="rounded-full border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-semibold text-[#0b0f14] transition hover:border-[#0b0f14] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl border border-[#cbd5e1] bg-white px-4 py-3 text-sm font-semibold text-[#0b0f14] transition hover:border-[#0b0f14] disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-xs"
             >
               Sau
             </button>

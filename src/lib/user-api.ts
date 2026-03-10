@@ -306,6 +306,7 @@ export const fetchVocab = (params?: {
 
 export const fetchMyVocab = (params?: {
   status?: string;
+  topicId?: string;
   page?: number;
   size?: number;
   sort?: string;
@@ -322,6 +323,9 @@ export const fetchMyVocab = (params?: {
   }
   if (params?.status) {
     query.set("status", params.status);
+  }
+  if (params?.topicId) {
+    query.set("topicId", params.topicId);
   }
 
   return authFetchJson<PageResponse<UserVocabularyResponse>>(

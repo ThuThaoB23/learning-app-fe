@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import StartSelectedVocabSessionForm from "../../../_components/start-selected-vocab-session-form";
+import { fetchTopics } from "@/lib/user-api";
 
 export const metadata: Metadata = {
   title: "Phiên tự chọn",
   description: "Tạo phiên luyện tập từ danh sách từ vựng và dạng câu hỏi bạn tự chọn.",
 };
 
-export default function CustomPracticePage() {
+export default async function CustomPracticePage() {
+  const topicPage = await fetchTopics({
+    page: 0,
+    size: 100,
+    sort: "name,asc",
+  });
+  const topics = topicPage?.content ?? [];
+
   return (
     <div className="space-y-6">
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-white/70 bg-white/90 px-5 py-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
@@ -28,7 +36,7 @@ export default function CustomPracticePage() {
         </div>
       </section>
 
-      <StartSelectedVocabSessionForm />
+      <StartSelectedVocabSessionForm topics={topics} />
     </div>
   );
 }

@@ -98,7 +98,7 @@ export default async function PracticePage({ searchParams }: PracticePageProps) 
               </p>
             </div>
             <span className="rounded-full border border-[#e0e7ff] bg-[#eef2ff] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#4338ca]">
-              User set
+              custom
             </span>
           </div>
 

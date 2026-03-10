@@ -367,6 +367,7 @@ export const searchVocabClient = async (
 export const fetchMyVocabClient = async (params?: {
   query?: string;
   status?: string;
+  topicId?: string;
   page?: number;
   size?: number;
   sort?: string;
@@ -382,6 +383,9 @@ export const fetchMyVocabClient = async (params?: {
   query.set("sort", params?.sort?.trim() || "updatedAt,desc");
   if (params?.status?.trim()) {
     query.set("status", params.status.trim());
+  }
+  if (params?.topicId?.trim()) {
+    query.set("topicId", params.topicId.trim());
   }
 
   try {
